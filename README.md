@@ -12,7 +12,10 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - Delete diary entries with confirmation
 - Feedback + delete controls inside diary entry cards
 - Face-API readings popup to inspect live detection stats
-- Multiple entries per day (entries are not treated as calendar days)
+- Theme customization (`Warm`, `Ocean`, `Forest`, `Night`)
+- Camera switch button (front/back) + preferred default camera
+- Photo snapshot preference per scan (`ask`, `always`, `never`)
+- Diary grouped by day with multiple scans inside each day
 - Optional PIN lock for local diary privacy
 - Export/import diary JSON backups
 - Safer API key modes:
