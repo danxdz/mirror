@@ -12,6 +12,8 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - Delete diary entries with confirmation
 - Feedback + delete controls inside diary entry cards
 - Face-API readings popup to inspect live detection stats
+- If face is not detected, optional "resume entry" can still be saved from recent context
+- No-face resume entries can optionally keep current snapshot and link recent previous photos
 - Theme customization (`Warm`, `Ocean`, `Forest`, `Night`)
 - Camera switch button (front/back) + preferred default camera
 - Photo snapshot preference per scan (`ask`, `always`, `never`)
