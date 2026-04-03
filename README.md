@@ -9,6 +9,9 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - Gemini-generated diary text auto-saved on each scan
 - Like/Not me feedback on each entry
 - Random writing style per entry, adapted over time from feedback
+- Delete diary entries with confirmation
+- Feedback + delete controls inside diary entry cards
+- Face-API readings popup to inspect live detection stats
 - Multiple entries per day (entries are not treated as calendar days)
 - Optional PIN lock for local diary privacy
 - Export/import diary JSON backups
