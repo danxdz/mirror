@@ -1,14 +1,15 @@
 # Mirror Mirror
 
 Mirror Mirror is a face-aware personal diary app.
-It detects facial signals in the browser, drafts a short reflection with Gemini, then lets the user edit and save the entry.
+It detects facial signals in the browser, drafts a short reflection with Gemini, and auto-saves each scan as a new entry.
 
 ## Highlights
 
 - Browser camera scan + `face-api.js` mood/age/energy signals
-- Gemini-generated diary text with editable draft before save
-- Regenerate once per scan
-- Tone modes: `direct`, `gentle`, `poetic`
+- Gemini-generated diary text auto-saved on each scan
+- Like/Not me feedback on each entry
+- Random writing style per entry, adapted over time from feedback
+- Multiple entries per day (entries are not treated as calendar days)
 - Optional PIN lock for local diary privacy
 - Export/import diary JSON backups
 - Safer API key modes:
