@@ -1,51 +1,48 @@
 # Mirror Mirror
 
-Mirror Mirror is a private-feeling camera diary app.
-It reads facial expression signals in the browser, then writes a short daily reflection using Gemini.
+Mirror Mirror is a face-aware personal diary app.
+It detects facial signals in the browser, drafts a short reflection with Gemini, then lets the user edit and save the entry.
 
-## What the app does
+## Highlights
 
-1. User enters name, age, and Gemini API key.
-2. App opens camera and detects face expression, estimated age, and energy score.
-3. App asks Gemini to write a 2-3 sentence diary entry.
-4. Entry is saved and shown in a personal timeline.
+- Browser camera scan + `face-api.js` mood/age/energy signals
+- Gemini-generated diary text with editable draft before save
+- Regenerate once per scan
+- Tone modes: `direct`, `gentle`, `poetic`
+- Optional PIN lock for local diary privacy
+- Export/import diary JSON backups
+- Safer API key modes:
+  - `session` (recommended): key is forgotten when tab closes
+  - `local`: key is saved in browser storage
+- Optional server key mode with `GEMINI_API_KEY`
+- Auto-download face model files from server when missing
+- Render-ready backend (`Flask` + `gunicorn`)
 
-## Core features
+## Privacy behavior
 
-- Multi-screen flow: setup, API key, mirror scan, diary, settings.
-- Face analysis with `face-api.js` (tiny face detector, expression net, age/gender net).
-- Local diary history stored in browser `localStorage`.
-- Friendly fallback text when Gemini is unavailable.
-- Auto-download model weights from server when missing.
-- Render-ready Python backend using Flask + Gunicorn.
+- Face analysis runs in the browser.
+- Diary text generation is sent to Gemini API (through `/gemini` on backend).
+- Diary entries are stored in browser local storage.
+- API key storage depends on selected mode.
 
-## Privacy notes
+## Stack
 
-- Camera processing runs in the browser.
-- User profile, API key, and diary entries are stored in local browser storage.
-- Gemini requests are proxied through `/gemini` on the Flask server and sent to Google Gemini API.
+- Frontend: `index.html` (vanilla HTML/CSS/JS)
+- Face analysis: `face-api.js` (CDN)
+- Backend: `server.py` (`Flask`, `requests`)
+- Prod server: `gunicorn`
 
-## Tech stack
+## API endpoints
 
-- Frontend: vanilla HTML/CSS/JS (`index.html`)
-- AI vision: `face-api.js` via CDN
-- Backend: Flask (`server.py`)
-- HTTP: `requests`
-- Production server: `gunicorn`
+- `GET /` serves app
+- `GET /config` returns server feature config (`serverKeyConfigured`, `defaultModel`)
+- `GET /healthz` basic health check
+- `POST /gemini` Gemini proxy with model fallback
+- `GET /weights/status` model file availability
+- `POST /weights/prefetch` pre-download missing model files
+- `GET /weights/<file>` serve model files (auto-download when missing)
 
-## Project structure
-
-```text
-.
-|-- index.html
-|-- server.py
-|-- requirements.txt
-|-- render.yaml
-|-- download_models.py
-`-- weights/
-```
-
-## Run locally
+## Local run
 
 ```bash
 python -m venv .venv
@@ -57,49 +54,38 @@ python server.py
 
 Open `http://localhost:8080`.
 
-## Model files
+## Environment variables
 
-No manual step is required for normal use.
-When the browser asks for `/weights/...`, the server downloads missing model files automatically into `weights/`.
+- `PORT` (optional): server port (Render sets this automatically)
+- `GEMINI_API_KEY` (optional): enables server key mode
+- `GEMINI_MODEL` (optional): default model, example `gemini-2.0-flash`
 
-Optional pre-download:
-
-```bash
-python download_models.py
-```
-
-## Publish to GitHub
+## Testing
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/<your-user>/<your-repo>.git
-git push -u origin main
+python -m unittest discover -s tests -p "test_*.py"
 ```
 
 ## Deploy to Render
 
-### Option A: Blueprint (recommended)
+### Blueprint (recommended)
 
-1. Push this repo to GitHub.
-2. In Render, click `New +` -> `Blueprint`.
-3. Select the repo.
-4. Render reads `render.yaml` and deploys automatically.
+1. Push repo to GitHub
+2. Render -> `New +` -> `Blueprint`
+3. Select repo
+4. Render reads `render.yaml` and deploys
 
-### Option B: Manual Web Service
+### Manual Web Service
 
 - Build command: `pip install -r requirements.txt`
 - Start command: `gunicorn --bind 0.0.0.0:$PORT server:app`
 
-## Environment and runtime
+## Gemini troubleshooting
 
-- Python version is pinned in `render.yaml`.
-- Server reads `PORT` from environment (Render-compatible).
+If you see Gemini errors:
 
-## Known limitations
-
-- Browser must allow camera access.
-- If internet is blocked, model download and Gemini calls will fail.
-- API key format is validated client-side by prefix check (`AIza...`).
+1. Verify API key is valid and active in Google AI Studio.
+2. In app settings, try model `gemini-2.0-flash`.
+3. If using server key mode, confirm `GEMINI_API_KEY` is set in Render environment variables.
+4. Check Render logs for upstream `4xx/5xx` messages.
+5. If API fails, app falls back to local text so diary flow still works.

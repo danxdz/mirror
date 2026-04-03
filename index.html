@@ -7,339 +7,121 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#f8f7f4;color:#1a1a1a;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem}
-.app{width:100%;max-width:420px}
-.screen{display:none;flex-direction:column;align-items:center;padding:1.5rem 0}
-.screen.active{display:flex}
-h1{font-size:24px;font-weight:500;text-align:center;margin-bottom:6px;color:#1a1a1a}
-.sub{font-size:14px;color:#666;text-align:center;margin-bottom:1.75rem;line-height:1.6;max-width:300px}
-.field{width:100%;margin-bottom:1rem}
-.field label{font-size:13px;color:#666;display:block;margin-bottom:5px}
-.field input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#1a1a1a;font-size:15px;outline:none;transition:border 0.15s}
-.field input:focus{border-color:#999}
-.field input[type=password]{letter-spacing:2px;font-family:monospace}
-.btn{padding:10px 24px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#1a1a1a;font-size:14px;cursor:pointer;transition:all 0.15s}
-.btn:hover{background:#f0eeeb}
-.btn-dark{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-.btn-dark:hover{opacity:0.85;background:#1a1a1a}
-.btn-sm{padding:8px 16px;font-size:13px}
-
-#cam-wrap{position:relative;width:240px;height:240px;border-radius:50%;overflow:hidden;border:1px solid #ddd;margin:1.25rem 0;background:#eee;flex-shrink:0}
+.app{width:100%;max-width:430px}.screen{display:none;flex-direction:column;align-items:center;padding:1.5rem 0}.screen.active{display:flex}
+h1{font-size:24px;font-weight:500;text-align:center;margin-bottom:6px}.sub{font-size:14px;color:#666;text-align:center;margin-bottom:1.5rem;line-height:1.6;max-width:340px}
+.field{width:100%;margin-bottom:1rem}.field label{font-size:13px;color:#666;display:block;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#1a1a1a;font-size:14px;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#999}
+.btn{padding:10px 24px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#1a1a1a;font-size:14px;cursor:pointer}.btn:hover{background:#f0eeeb}.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn-dark{background:#1a1a1a;color:#fff;border-color:#1a1a1a}.btn-sm{padding:8px 14px;font-size:13px}
+#cam-wrap{position:relative;width:240px;height:240px;border-radius:50%;overflow:hidden;border:1px solid #ddd;margin:1rem 0;background:#eee;display:none}
 #cam{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-#cam-overlay{position:absolute;inset:0;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0;transition:opacity 0.3s;background:rgba(0,0,0,0.5)}
-#cam-overlay.show{opacity:1}
-#cam-overlay-text{color:#fff;font-size:13px;text-align:center;padding:0 1rem;line-height:1.5;position:relative;z-index:2}
-.scan-ring{width:200px;height:200px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.5);position:absolute;animation:pulse 1.5s ease-in-out infinite}
-@keyframes pulse{0%,100%{transform:scale(0.92);opacity:0.4}50%{transform:scale(1.04);opacity:1}}
-
-#result-card{width:100%;border:1px solid #e8e6e1;border-radius:14px;padding:1.25rem;margin:0.75rem 0;display:none;background:#fff}
-#result-card.show{display:block}
-.r-date{font-size:12px;color:#999;margin-bottom:10px}
-.r-text{font-size:15px;color:#1a1a1a;line-height:1.8;font-family:Georgia,serif;margin-bottom:1rem}
-.r-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:#f8f7f4;border-radius:8px;padding:10px 8px;text-align:center}
-.stat-l{font-size:11px;color:#999;margin-bottom:3px}
-.stat-v{font-size:15px;font-weight:500;color:#1a1a1a}
-.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:1rem}
-.day-label{font-size:12px;color:#999;letter-spacing:0.05em;margin-bottom:4px}
-
-.entry{border:1px solid #e8e6e1;border-radius:10px;padding:1rem 1.25rem;margin-bottom:10px;background:#fff}
-.entry-date{font-size:12px;color:#999;margin-bottom:6px}
-.entry-text{font-size:14px;color:#444;line-height:1.7;font-family:Georgia,serif}
-.entry-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.tag{font-size:11px;padding:3px 8px;border-radius:20px;background:#f0eeeb;color:#666}
-.empty{text-align:center;color:#999;font-size:14px;padding:3rem 0;line-height:1.7}
-
-.key-setup{width:100%;border:1px solid #e8e6e1;border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;background:#fff}
-.key-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;font-size:13px;color:#555;line-height:1.5}
-.key-step:last-child{margin-bottom:0}
-.step-num{width:20px;height:20px;border-radius:50%;background:#f0eeeb;color:#1a1a1a;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.notice{font-size:12px;color:#999;text-align:center;max-width:300px;line-height:1.6;margin-top:0.75rem}
-
-.loading-dot::after{content:'';animation:ldots 1.4s infinite}
-@keyframes ldots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
-
-#cam-status{font-size:14px;color:#666;text-align:center;padding:0.5rem 0}
-#diary-wrap{width:100%}
+#cam-overlay{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:.3s;background:rgba(0,0,0,.5)}#cam-overlay.show{opacity:1}
+#cam-overlay-text{color:#fff;font-size:13px;text-align:center;padding:0 1rem}
+#result-card{width:100%;border:1px solid #e8e6e1;border-radius:14px;padding:1rem;margin:.75rem 0;display:none;background:#fff}#result-card.show{display:block}
+.r-date{font-size:12px;color:#999;margin-bottom:8px}.r-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f8f7f4;border-radius:8px;padding:10px 8px;text-align:center}
+.stat-l{font-size:11px;color:#999}.stat-v{font-size:15px;font-weight:500}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:1rem}
+.entry{border:1px solid #e8e6e1;border-radius:10px;padding:1rem 1.25rem;margin-bottom:10px;background:#fff}.entry-date{font-size:12px;color:#999;margin-bottom:6px}
+.entry-text{font-size:14px;color:#444;line-height:1.7;font-family:Georgia,serif;white-space:pre-wrap}.entry-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tag{font-size:11px;padding:3px 8px;border-radius:20px;background:#f0eeeb;color:#666}.empty{text-align:center;color:#999;font-size:14px;padding:3rem 0}
+.notice{font-size:12px;color:#777;text-align:center;max-width:340px;line-height:1.5;margin-top:.75rem}.msg{width:100%;padding:9px 12px;border-radius:10px;margin:.4rem 0 .8rem;font-size:13px;line-height:1.5;display:none}
+.msg.info{display:block;background:#f2f5fb;color:#3c4c66;border:1px solid #dde5f4}.msg.ok{display:block;background:#f1f8f2;color:#2f5d35;border:1px solid #d6ead8}
+.msg.warn{display:block;background:#fff7ee;color:#7a4f1d;border:1px solid #f5e1ca}.msg.err{display:block;background:#fff2f2;color:#7a2f2f;border:1px solid #f1d0d0}
+#cam-status{font-size:14px;color:#666;text-align:center;padding:.5rem 0}.loading-dot:after{content:'';animation:ld 1.4s infinite}@keyframes ld{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+#r-edit{min-height:100px;resize:vertical;font-family:Georgia,serif;line-height:1.6}
 </style>
 </head>
 <body>
 <div class="app">
-
 <div id="s-setup" class="screen active">
-  <h1>Mirror Mirror</h1>
-  <p class="sub">A private diary that reads your face.<br>Nothing leaves your device.</p>
-  <div class="field"><label>Your name</label><input id="inp-name" placeholder="e.g. Dan"/></div>
-  <div class="field"><label>Your age</label><input id="inp-age" type="number" placeholder="e.g. 28" min="10" max="99"/></div>
-  <button class="btn btn-dark" onclick="goToKey()">Continue</button>
+<h1>Mirror Mirror</h1>
+<p class="sub">Face analysis runs in your browser. Diary text is generated by Gemini through your key.</p>
+<div class="field"><label>Your name</label><input id="inp-name"/></div>
+<div class="field"><label>Your age</label><input id="inp-age" type="number" min="10" max="99"/></div>
+<div class="field"><label>Diary PIN (optional, 4-10 digits)</label><input id="inp-pin" type="password"/></div>
+<button class="btn btn-dark" onclick="goToKey()">Continue</button>
 </div>
-
+<div id="s-lock" class="screen"><h1>Unlock diary</h1><p class="sub">This diary is protected with a PIN.</p><div class="field"><label>PIN</label><input id="lock-pin" type="password"/></div><div class="actions"><button class="btn btn-dark" onclick="unlockPin()">Unlock</button><button class="btn btn-sm" onclick="showScreen('s-setup')">Start over</button></div></div>
 <div id="s-key" class="screen">
-  <h1>Connect your AI</h1>
-  <p class="sub">Mirror Mirror uses Gemini to write your diary. Free forever for personal use.</p>
-  <div class="key-setup">
-    <div class="key-step"><div class="step-num">1</div><span>Open Google AI Studio — sign in with your Google account</span></div>
-    <div class="key-step"><div class="step-num">2</div><span>Click "Create API key" — takes 10 seconds, no credit card</span></div>
-    <div class="key-step"><div class="step-num">3</div><span>Copy the key and paste it below</span></div>
-    <div style="margin-top:12px;text-align:center">
-      <button class="btn btn-sm" onclick="window.open('https://aistudio.google.com/apikey','_blank')">Open Google AI Studio →</button>
-    </div>
-  </div>
-  <div class="field"><label>Paste your Gemini API key</label><input id="inp-key" type="password" placeholder="AIza..."/></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-    <button class="btn btn-sm" onclick="showScreen('s-setup')">Back</button>
-    <button class="btn btn-dark" onclick="saveKey()">Open the mirror</button>
-  </div>
-  <p class="notice">Your key is stored only in your browser. We never see it.</p>
+<h1>Connect Gemini</h1>
+<p class="sub">Use your own key or server key mode.</p>
+<div class="field"><label>Gemini API key</label><input id="inp-key" type="password" placeholder="AIza... or blank if server key is configured"/></div>
+<div class="field"><label>Key storage mode</label><select id="inp-key-mode"><option value="session">Private session (recommended)</option><option value="local">Remember in this browser</option></select></div>
+<div class="field"><label>Gemini model</label><input id="inp-model" placeholder="gemini-2.0-flash"/></div>
+<div class="actions"><button class="btn btn-sm" onclick="showScreen('s-setup')">Back</button><button class="btn btn-dark" onclick="saveKey()">Open mirror</button></div>
+<p class="notice" id="key-notice"></p>
 </div>
-
 <div id="s-mirror" class="screen">
-  <div class="day-label">day <span id="day-num">1</span></div>
-  <h1 id="greeting">Good morning</h1>
-  <div id="cam-status" class="loading-dot">Starting camera</div>
-  <div id="cam-wrap" style="display:none">
-    <video id="cam" autoplay muted playsinline></video>
-    <div id="cam-overlay">
-      <div class="scan-ring"></div>
-      <div id="cam-overlay-text">reading your face...</div>
-    </div>
-  </div>
-  <button class="btn btn-dark" id="scan-btn" style="display:none" onclick="doScan()">Look in the mirror</button>
-  <div id="result-card">
-    <div class="r-date" id="r-date"></div>
-    <div class="r-text" id="r-text"></div>
-    <div class="r-stats" id="r-stats"></div>
-  </div>
-  <div class="actions" id="mirror-actions" style="display:none">
-    <button class="btn btn-sm" onclick="doScan()">Look again</button>
-    <button class="btn btn-sm" onclick="showScreen('s-diary');buildDiary()">My diary</button>
-    <button class="btn btn-sm" onclick="openSettings()">Settings</button>
-  </div>
+<div style="font-size:12px;color:#999">day <span id="day-num">1</span></div>
+<h1 id="greeting">Good morning</h1>
+<div id="mirror-msg" class="msg"></div>
+<div id="cam-status" class="loading-dot">Preparing camera</div>
+<div id="cam-wrap"><video id="cam" autoplay muted playsinline></video><div id="cam-overlay"><div id="cam-overlay-text">reading your face...</div></div></div>
+<div class="field" style="max-width:290px"><label>Writing tone</label><select id="tone-select" onchange="onToneChange()"><option value="direct">Direct</option><option value="gentle">Gentle</option><option value="poetic">Poetic</option></select></div>
+<button class="btn btn-dark" id="scan-btn" style="display:none" onclick="doScan()">Look in the mirror</button>
+<div id="result-card"><div class="r-date" id="r-date"></div><div class="field"><label>Edit before saving</label><textarea id="r-edit"></textarea></div><div class="r-stats" id="r-stats"></div></div>
+<div class="actions" id="mirror-actions" style="display:none"><button id="save-entry-btn" class="btn btn-dark btn-sm" onclick="saveCurrentEntry()" disabled>Save entry</button><button id="regen-btn" class="btn btn-sm" onclick="regenerateEntry()" disabled>Regenerate once</button><button class="btn btn-sm" onclick="doScan()">Look again</button><button class="btn btn-sm" onclick="showScreen('s-diary');buildDiary()">My diary</button><button class="btn btn-sm" onclick="openSettings()">Settings</button></div>
 </div>
-
-<div id="s-diary" class="screen">
-  <h1>Your diary</h1>
-  <p class="sub" id="diary-sub"></p>
-  <div id="diary-wrap"></div>
-  <div class="actions" style="margin-top:0.5rem">
-    <button class="btn btn-sm" onclick="showScreen('s-mirror')">Back</button>
-  </div>
+<div id="s-diary" class="screen"><h1>Your diary</h1><p class="sub" id="diary-sub"></p><div id="diary-wrap" style="width:100%"></div><div class="actions"><button class="btn btn-sm" onclick="exportDiary()">Export JSON</button><button class="btn btn-sm" onclick="triggerImport()">Import JSON</button><button class="btn btn-sm" onclick="showScreen('s-mirror')">Back</button></div><input id="import-file" type="file" accept="application/json" onchange="importDiary(event)" style="display:none"/></div>
+<div id="s-settings" class="screen"><h1>Settings</h1><div class="field"><label>Your name</label><input id="set-name"/></div><div class="field"><label>Your age</label><input id="set-age" type="number" min="5" max="120"/></div><div class="field"><label>Diary PIN (blank to remove)</label><input id="set-pin" type="password"/></div><div class="field"><label>Gemini API key</label><input id="set-key" type="password" placeholder="leave blank to keep current"/></div><div class="field"><label>Gemini model</label><input id="set-model"/></div><div class="field"><label>Key storage mode</label><select id="set-key-mode"><option value="session">Private session</option><option value="local">Remember in this browser</option></select></div><div class="field"><label>Default tone</label><select id="set-tone"><option value="direct">Direct</option><option value="gentle">Gentle</option><option value="poetic">Poetic</option></select></div><div class="actions"><button class="btn btn-sm" onclick="showScreen('s-mirror')">Cancel</button><button class="btn btn-dark" onclick="saveSettings()">Save</button><button class="btn btn-sm" onclick="lockNow()">Lock now</button><button class="btn btn-sm" style="color:#c0392b;border-color:#f5c6c6" onclick="clearAll()">Clear all data</button></div></div>
 </div>
-
-<div id="s-settings" class="screen">
-  <h1>Settings</h1>
-  <div class="field" style="margin-top:1rem"><label>Your name</label><input id="set-name"/></div>
-  <div class="field"><label>Your age</label><input id="set-age" type="number"/></div>
-  <div class="field"><label>Gemini API key</label><input id="set-key" type="password"/></div>
-  <div class="actions">
-    <button class="btn btn-sm" onclick="showScreen('s-mirror')">Cancel</button>
-    <button class="btn btn-dark" onclick="saveSettings()">Save</button>
-    <button class="btn btn-sm" style="color:#c0392b;border-color:#f5c6c6" onclick="clearAll()">Clear all data</button>
-  </div>
-</div>
-
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-const MODEL_URL='/weights';
-let db={},modelsReady=false;
-
-function load(){const s=localStorage.getItem('mm2');return s?JSON.parse(s):{}}
-function save(){localStorage.setItem('mm2',JSON.stringify(db))}
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
-
-function goToKey(){
-  const n=document.getElementById('inp-name').value.trim();
-  const a=parseInt(document.getElementById('inp-age').value);
-  if(!n||!a||a<5||a>110){alert('Please fill in your name and age.');return;}
-  db.name=n;db.age=a;save();
-  showScreen('s-key');
-}
-
-function saveKey(){
-  const k=document.getElementById('inp-key').value.trim();
-  if(!k||!k.startsWith('AIza')){alert('Please paste a valid Gemini API key (starts with AIza...)');return;}
-  db.apiKey=k;db.entries=db.entries||[];save();
-  initMirror();
-}
-
-function initMirror(){
-  showScreen('s-mirror');
-  const h=new Date().getHours();
-  const g=h<12?`Good morning, ${db.name}`:h<18?`Good afternoon, ${db.name}`:`Good evening, ${db.name}`;
-  document.getElementById('greeting').textContent=g;
-  document.getElementById('day-num').textContent=(db.entries?.length||0)+1;
-  document.getElementById('result-card').classList.remove('show');
-  document.getElementById('mirror-actions').style.display='none';
-  loadModels();
-}
-
-async function loadModels(){
-  const st=document.getElementById('cam-status');
-  st.style.display='block';st.textContent='Loading face analysis';st.classList.add('loading-dot');
+const MODEL_URL='/weights',DB_KEY='mm2',SESSION_API_KEY='mm2_session_api_key',SESSION_UNLOCK='mm2_unlocked';
+let db={},modelsReady=false,mirrorInitInProgress=false,pendingEntry=null,hasRegenerated=false,appConfig={serverKeyConfigured:false,defaultModel:'gemini-2.0-flash'};
+const byId=(id)=>document.getElementById(id);
+const showScreen=(id)=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));byId(id).classList.add('active');};
+function loadDB(){const r=localStorage.getItem(DB_KEY);if(!r)return{};try{return JSON.parse(r)||{}}catch{return{}}}
+function normalizeDB(raw){const o={...(raw||{})};o.name=(o.name||'').trim();o.age=Number(o.age)||'';o.entries=Array.isArray(o.entries)?o.entries:[];o.tone=['direct','gentle','poetic'].includes(o.tone)?o.tone:'direct';o.keyMode=o.keyMode==='local'?'local':'session';o.geminiModel=(o.geminiModel||appConfig.defaultModel).trim();o.pin=o.pin?String(o.pin):'';return o;}
+function saveDB(){const o={...db};if(o.keyMode!=='local')delete o.apiKey;localStorage.setItem(DB_KEY,JSON.stringify(o));}
+function getApiKey(){return db.keyMode==='local'?(db.apiKey||'').trim():(sessionStorage.getItem(SESSION_API_KEY)||'').trim();}
+function setApiKey(v,mode){const key=(v||'').trim();sessionStorage.removeItem(SESSION_API_KEY);delete db.apiKey;if(!key)return;if(mode==='local')db.apiKey=key;else sessionStorage.setItem(SESSION_API_KEY,key);}
+const hasProfile=()=>Boolean(db.name&&db.age);const setUnlocked=(v)=>v?sessionStorage.setItem(SESSION_UNLOCK,'1'):sessionStorage.removeItem(SESSION_UNLOCK);const isUnlocked=()=>sessionStorage.getItem(SESSION_UNLOCK)==='1';
+function setMirrorMsg(text,type){const el=byId('mirror-msg');if(!text){el.className='msg';el.textContent='';return;}el.className=`msg ${type||'info'}`;el.textContent=text;}
+function setCamStatus(text,loading){const el=byId('cam-status');el.textContent=text;el.style.display='block';el.classList.toggle('loading-dot',Boolean(loading));}
+function sanitize(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function updateKeyNotice(){const m=byId('inp-key-mode').value;if(appConfig.serverKeyConfigured){byId('key-notice').textContent='Server key mode is available. You can leave API key empty.';return;}byId('key-notice').textContent=m==='local'?'Your key will be saved in browser localStorage.':'Your key is kept only in this tab session.';}
+async function loadServerConfig(){try{const r=await fetch('/config');if(!r.ok)return;const d=await r.json();appConfig.serverKeyConfigured=Boolean(d.serverKeyConfigured);appConfig.defaultModel=(d.defaultModel||appConfig.defaultModel).trim();}catch{}}
+function routeFromState(){if(!hasProfile()){showScreen('s-setup');return;}if(db.pin&&!isUnlocked()){showScreen('s-lock');return;}const hasKey=Boolean(getApiKey())||appConfig.serverKeyConfigured;if(hasKey)initMirror();else showScreen('s-key');}
+function goToKey(){const name=byId('inp-name').value.trim(),age=Number(byId('inp-age').value),pin=byId('inp-pin').value.trim();if(!name||!age||age<5||age>120){alert('Please enter a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}db.name=name;db.age=age;db.pin=pin||'';db.entries=db.entries||[];db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode=db.keyMode||'session';saveDB();setUnlocked(true);byId('inp-model').value=db.geminiModel;byId('inp-key-mode').value=db.keyMode;updateKeyNotice();showScreen('s-key');}
+function unlockPin(){const pin=byId('lock-pin').value.trim();if(!db.pin){setUnlocked(true);routeFromState();return;}if(pin!==db.pin){alert('Incorrect PIN.');return;}setUnlocked(true);byId('lock-pin').value='';routeFromState();}
+function saveKey(){const mode=byId('inp-key-mode').value,model=byId('inp-model').value.trim()||appConfig.defaultModel,key=byId('inp-key').value.trim();if(key&&key.length<20){alert('That key looks too short.');return;}if(!key&&!appConfig.serverKeyConfigured){alert('Please provide an API key, or configure GEMINI_API_KEY on server.');return;}db.keyMode=mode==='local'?'local':'session';db.geminiModel=model;db.entries=db.entries||[];setApiKey(key||getApiKey(),db.keyMode);saveDB();initMirror();}
+const greetingForNow=(name)=>{const h=new Date().getHours();if(h<12)return`Good morning, ${name}`;if(h<18)return`Good afternoon, ${name}`;return`Good evening, ${name}`;};
+async function initMirror(){if(mirrorInitInProgress)return;mirrorInitInProgress=true;showScreen('s-mirror');byId('greeting').textContent=greetingForNow(db.name||'friend');byId('day-num').textContent=(db.entries?.length||0)+1;byId('tone-select').value=db.tone||'direct';byId('result-card').classList.remove('show');byId('mirror-actions').style.display='flex';pendingEntry=null;hasRegenerated=false;updatePendingButtons();setMirrorMsg('','info');try{await loadModels();await startCam();}finally{mirrorInitInProgress=false;}}
+async function loadModels(){if(modelsReady){setCamStatus('Face analysis ready',false);return;}setCamStatus('Checking model files',true);try{const sres=await fetch('/weights/status');if(sres.ok){const s=await sres.json();if(Array.isArray(s.missing)&&s.missing.length){setCamStatus(`Downloading ${s.missing.length} model files (first run only)`,true);const p=await fetch('/weights/prefetch',{method:'POST'});if(!p.ok)setMirrorMsg('Model prefetch had issues. Continuing.', 'warn');}}}catch{setMirrorMsg('Could not pre-check model files. Continuing...','warn');}setCamStatus('Loading face analysis models',true);try{await Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL)]);modelsReady=true;setCamStatus('Face analysis ready',false);}catch{setCamStatus('Could not load face models. Check internet and retry.',false);setMirrorMsg('Model loading failed. Retry in a few seconds.','err');throw new Error('Model load failed');}}
+async function startCam(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setCamStatus('Camera API not supported.',false);setMirrorMsg('Use a recent browser.','err');return;}try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});const v=byId('cam');v.srcObject=stream;await new Promise(r=>{v.onloadedmetadata=r});byId('cam-wrap').style.display='block';byId('scan-btn').style.display='inline-block';byId('cam-status').style.display='none';setMirrorMsg('Camera ready. Scan when centered.','ok');}catch{setCamStatus('Camera access denied or unavailable.',false);setMirrorMsg('Allow camera permission and refresh.','err');}}
+function onToneChange(){db.tone=byId('tone-select').value;saveDB();}
+function buildTrend(){const l=(db.entries||[]).slice(-7);if(!l.length)return'';const avg=Math.round(l.reduce((s,e)=>s+(Number(e.energy)||0),0)/l.length);const f={};l.forEach(e=>{f[e.expression]=(f[e.expression]||0)+1});const d=Object.keys(f).sort((a,b)=>f[b]-f[a])[0]||'neutral';return`Last 7 days: avg energy ${avg}%, dominant mood "${d}".`;}
+function fallbackText(top,energy,prev){const m={happy:'Something is lifting you today.',sad:'There is weight in your face right now.',angry:'Tension. Something is not sitting right.',neutral:'Quiet. Hard to read.',surprised:'Wide open. Alert.',fearful:'Something is making you smaller.',disgusted:'Something feels wrong today.'};const c=prev?(energy>prev.energy+10?'More alive than yesterday.':(energy<prev.energy-10?'Something drained you since yesterday.':'About the same as yesterday.')):'First day. The mirror is just learning you.';return`${m[top]||'The mirror sees you.'} ${c}`;}
+function buildPrompt(input){const tm={direct:'Tone: direct, plain, concrete.',gentle:'Tone: calm and gentle, still honest and specific.',poetic:'Tone: lightly poetic, but clear and grounded.'};const ad=input.detectedAge-input.realAge;const ageNote=ad>5?`looks ${ad} years older than usual`:(ad<-5?`looks ${Math.abs(ad)} years younger than usual`:'looks about their age');const prev=input.prev?`Yesterday: ${input.prev.expression}, energy ${input.prev.energy}%.`:'First entry ever.';const trend=(db.entries?.length||0)>4?buildTrend():'';const tone=tm[input.tone]||tm.direct;return`You are a quiet, honest mirror writing a private diary entry. Not a therapist, not dramatic, and no advice.\n\nPerson: ${input.name}, age ${input.realAge}. Day ${input.dayN}.\nFace: primary expression "${input.topExpression}" (${Math.round(input.expressions[input.topExpression]*100)}%), energy ${input.energy}/100, ${ageNote}.\n${prev} ${trend}\n${tone}\n\nWrite exactly 2-3 sentences as the mirror. Be specific to the data. No questions. No emojis.`;}
+async function callGemini(input){
+  const body={contents:[{parts:[{text:buildPrompt(input)}]}],generationConfig:{temperature:input.tone==='poetic'?0.9:(input.tone==='gentle'?0.75:0.65),maxOutputTokens:140}};
   try{
-    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-    await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
-    modelsReady=true;
-    st.style.display='none';st.classList.remove('loading-dot');
-    startCam();
-  }catch(e){
-    st.classList.remove('loading-dot');
-    st.textContent='Could not load face analysis. Check your internet connection.';
+    const res=await fetch('/gemini',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:getApiKey(),model:db.geminiModel||appConfig.defaultModel,body})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){throw new Error(data?.error?.message||`Gemini request failed (${res.status})`);}
+    const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!text)throw new Error('Gemini returned no text.');
+    return text.trim();
+  }catch(err){
+    setMirrorMsg(`Gemini error: ${err?.message||'Unknown error'}. Using fallback text.`,'warn');
+    return fallbackText(input.topExpression,input.energy,input.prev);
   }
 }
-
-async function startCam(){
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
-    const v=document.getElementById('cam');
-    v.srcObject=stream;
-    await new Promise(r=>v.onloadedmetadata=r);
-    document.getElementById('cam-wrap').style.display='block';
-    document.getElementById('scan-btn').style.display='inline-block';
-    document.getElementById('cam-status').style.display='none';
-  }catch(e){
-    const st=document.getElementById('cam-status');
-    st.style.display='block';st.classList.remove('loading-dot');
-    st.textContent='Camera access required. Please allow camera in your browser.';
-  }
-}
-
-async function doScan(){
-  if(!modelsReady)return;
-  const ov=document.getElementById('cam-overlay');
-  const btn=document.getElementById('scan-btn');
-  ov.classList.add('show');btn.style.display='none';
-  document.getElementById('result-card').classList.remove('show');
-  document.getElementById('mirror-actions').style.display='none';
-  await new Promise(r=>setTimeout(r,2500));
-  const v=document.getElementById('cam');
-  let det;
-  try{det=await faceapi.detectSingleFace(v,new faceapi.TinyFaceDetectorOptions()).withFaceExpressions().withAgeAndGender();}catch(e){}
-  if(!det){
-    ov.classList.remove('show');btn.style.display='inline-block';
-    showResult('The mirror could not find your face. Try better lighting and center yourself.',null,null,null);
-    return;
-  }
-  document.getElementById('cam-overlay-text').textContent='writing your entry...';
-  await processDetection(det);
-  ov.classList.remove('show');btn.style.display='inline-block';
-}
-
-async function processDetection(det){
-  const exps=det.expressions;
-  const top=Object.entries(exps).sort((a,b)=>b[1]-a[1])[0][0];
-  const detAge=Math.round(det.age);
-  const energy=Math.max(5,Math.min(99,Math.round(40+exps.happy*40+exps.surprised*20-(exps.sad+exps.fearful+exps.disgusted)*25+Math.random()*15)));
-  const prev=db.entries?.slice(-1)[0]||null;
-  const dayN=(db.entries?.length||0)+1;
-  const reading=await callGemini(top,exps,energy,detAge,db.age,dayN,prev,db.name);
-  const entry={date:new Date().toISOString(),expression:top,energy,detectedAge:detAge,reading};
-  if(!db.entries)db.entries=[];
-  db.entries.push(entry);save();
-  document.getElementById('day-num').textContent=dayN;
-  showResult(reading,top,energy,dayN);
-}
-
-async function callGemini(top,exps,energy,detAge,realAge,dayN,prev,name){
-  const ageDiff=detAge-realAge;
-  const ageNote=ageDiff>5?`looks ${ageDiff} years older than usual`:ageDiff<-5?`looks ${Math.abs(ageDiff)} years younger than usual`:`looks about their age`;
-  const prevNote=prev?`Yesterday: ${prev.expression}, energy ${prev.energy}%.`:`First entry ever.`;
-  const trend=db.entries?.length>4?buildTrend():'';
-
-  const prompt=`You are a quiet, honest mirror writing a private diary entry. You observe without judgment. Not a therapist, not cheerful, not dramatic. You notice things.
-
-Person: ${name}, age ${realAge}. Day ${dayN} of their diary.
-Face: primary expression "${top}" (${Math.round(exps[top]*100)}%), energy ${energy}/100, ${ageNote}.
-${prevNote} ${trend}
-
-Write exactly 2-3 sentences as the mirror. Be specific to the data. Plain language. No advice. No questions. No emojis. No "I notice" — just observe. Honest, slightly poetic, never flattering.`;
-
-  try{
-    const res=await fetch('/gemini',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({key:db.apiKey,body:{contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.85,maxOutputTokens:120}}})
-    });
-    const data=await res.json();
-    if(data.candidates?.[0]?.content?.parts?.[0]?.text)return data.candidates[0].content.parts[0].text.trim();
-    if(data.error)return`API error: ${data.error.message}. Check your key in Settings.`;
-  }catch(e){return fallbackText(top,energy,prev);}
-  return fallbackText(top,energy,prev);
-}
-
-function buildTrend(){
-  const last7=db.entries.slice(-7);
-  const avg=Math.round(last7.reduce((s,e)=>s+e.energy,0)/last7.length);
-  const moods=last7.map(e=>e.expression);
-  const dominant=moods.sort((a,b)=>moods.filter(v=>v===b).length-moods.filter(v=>v===a).length)[0];
-  return`Last 7 days: avg energy ${avg}%, most common mood "${dominant}".`;
-}
-
-function fallbackText(top,energy,prev){
-  const map={happy:'Something is lifting you today.',sad:'There is weight in your face right now.',angry:'Tension. Something is not sitting right.',neutral:'Quiet. Hard to read.',surprised:'Wide open. Alert.',fearful:'Something is making you smaller.',disgusted:'Something feels wrong today.'};
-  const comp=prev?(energy>prev.energy+10?'More alive than yesterday.':(energy<prev.energy-10?'Something drained you since yesterday.':'About the same as yesterday.')):'First day. The mirror is just learning you.';
-  return`${map[top]||'The mirror sees you.'} ${comp}`;
-}
-
-function showResult(text,exp,energy,dayN){
-  document.getElementById('r-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('r-text').textContent=text;
-  if(exp&&energy&&dayN){
-    document.getElementById('r-stats').innerHTML=`
-      <div class="stat"><div class="stat-l">mood</div><div class="stat-v">${exp}</div></div>
-      <div class="stat"><div class="stat-l">energy</div><div class="stat-v">${energy}%</div></div>
-      <div class="stat"><div class="stat-l">day</div><div class="stat-v">${dayN}</div></div>`;
-  }else{document.getElementById('r-stats').innerHTML='';}
-  document.getElementById('result-card').classList.add('show');
-  document.getElementById('mirror-actions').style.display='flex';
-}
-
-function buildDiary(){
-  const entries=(db.entries||[]).slice().reverse();
-  document.getElementById('diary-sub').textContent=entries.length===0?'No entries yet.':`${entries.length} day${entries.length>1?'s':''} recorded.`;
-  const wrap=document.getElementById('diary-wrap');
-  if(!entries.length){wrap.innerHTML='<div class="empty">Look in the mirror to write your first entry.</div>';return;}
-  wrap.innerHTML=entries.map(e=>`
-    <div class="entry">
-      <div class="entry-date">${new Date(e.date).toLocaleDateString('en-GB',{weekday:'long',month:'long',day:'numeric'})}</div>
-      <div class="entry-text">${e.reading}</div>
-      <div class="entry-tags">
-        <span class="tag">${e.expression}</span>
-        <span class="tag">energy ${e.energy}%</span>
-        ${e.detectedAge?`<span class="tag">looked ${e.detectedAge}</span>`:''}
-      </div>
-    </div>`).join('');
-}
-
-function openSettings(){
-  document.getElementById('set-name').value=db.name||'';
-  document.getElementById('set-age').value=db.age||'';
-  document.getElementById('set-key').value=db.apiKey||'';
-  showScreen('s-settings');
-}
-
-function saveSettings(){
-  db.name=document.getElementById('set-name').value.trim()||db.name;
-  db.age=parseInt(document.getElementById('set-age').value)||db.age;
-  const k=document.getElementById('set-key').value.trim();
-  if(k&&k.startsWith('AIza'))db.apiKey=k;
-  save();initMirror();
-}
-
-function clearAll(){
-  if(confirm('Delete everything? This cannot be undone.')){
-    localStorage.removeItem('mm2');db={};
-    showScreen('s-setup');
-  }
-}
-
-window.addEventListener('load',()=>{
-  db=load();
-  if(db.name&&db.age&&db.apiKey){initMirror();}
-  else if(db.name&&db.age){showScreen('s-key');}
-});
+function updatePendingButtons(){byId('save-entry-btn').disabled=!pendingEntry;byId('regen-btn').disabled=!pendingEntry||hasRegenerated;}
+async function doScan(){if(!modelsReady){setMirrorMsg('Face models are not ready yet.','warn');return;}const ov=byId('cam-overlay'),btn=byId('scan-btn');ov.classList.add('show');btn.style.display='none';byId('result-card').classList.remove('show');pendingEntry=null;hasRegenerated=false;updatePendingButtons();setMirrorMsg('','info');await new Promise(r=>setTimeout(r,1800));let det=null;try{det=await faceapi.detectSingleFace(byId('cam'),new faceapi.TinyFaceDetectorOptions()).withFaceExpressions().withAgeAndGender();}catch{}if(!det){ov.classList.remove('show');btn.style.display='inline-block';setMirrorMsg('Face not detected. Improve lighting and center your face.','warn');return;}byId('cam-overlay-text').textContent='writing your entry...';const exps=det.expressions,top=Object.entries(exps).sort((a,b)=>b[1]-a[1])[0][0],detAge=Math.round(det.age),energy=Math.max(5,Math.min(99,Math.round(40+exps.happy*40+exps.surprised*20-(exps.sad+exps.fearful+exps.disgusted)*25+Math.random()*15))),prev=db.entries?.slice(-1)[0]||null,dayN=(db.entries?.length||0)+1,tone=byId('tone-select').value||'direct';const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,prev,name:db.name,tone});pendingEntry={expression:top,energy,detectedAge:detAge,dayN,tone,reading};showResult(reading,top,energy,dayN);setMirrorMsg('Review and edit your entry, then save.','ok');ov.classList.remove('show');btn.style.display='inline-block';byId('cam-overlay-text').textContent='reading your face...';updatePendingButtons();}
+async function regenerateEntry(){if(!pendingEntry){setMirrorMsg('No pending entry to regenerate.','warn');return;}if(hasRegenerated){setMirrorMsg('Regenerate is limited to once per scan.','warn');return;}const prev=db.entries?.slice(-1)[0]||null;const text=await callGemini({topExpression:pendingEntry.expression,expressions:{[pendingEntry.expression]:0.75,neutral:0.25},energy:pendingEntry.energy,detectedAge:pendingEntry.detectedAge,realAge:db.age,dayN:pendingEntry.dayN,prev,name:db.name,tone:pendingEntry.tone});pendingEntry.reading=text;hasRegenerated=true;showResult(text,pendingEntry.expression,pendingEntry.energy,pendingEntry.dayN);setMirrorMsg('Entry regenerated. Save when ready.','ok');updatePendingButtons();}
+function showResult(text,exp,energy,dayN){byId('r-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});byId('r-edit').value=text||'';byId('r-stats').innerHTML=`<div class="stat"><div class="stat-l">mood</div><div class="stat-v">${sanitize(exp)}</div></div><div class="stat"><div class="stat-l">energy</div><div class="stat-v">${sanitize(energy)}%</div></div><div class="stat"><div class="stat-l">day</div><div class="stat-v">${sanitize(dayN)}</div></div>`;byId('result-card').classList.add('show');}
+function saveCurrentEntry(){if(!pendingEntry){setMirrorMsg('Scan first to generate an entry.','warn');return;}const edited=byId('r-edit').value.trim();if(!edited){setMirrorMsg('Entry text cannot be empty.','warn');return;}db.entries.push({date:new Date().toISOString(),expression:pendingEntry.expression,energy:pendingEntry.energy,detectedAge:pendingEntry.detectedAge,tone:pendingEntry.tone,reading:edited});saveDB();pendingEntry=null;hasRegenerated=false;byId('day-num').textContent=(db.entries?.length||0)+1;updatePendingButtons();setMirrorMsg('Entry saved.','ok');}
+function buildDiary(){const entries=(db.entries||[]).slice().reverse();byId('diary-sub').textContent=entries.length===0?'No entries yet.':`${entries.length} day${entries.length>1?'s':''} recorded.`;const wrap=byId('diary-wrap');if(!entries.length){wrap.innerHTML='<div class="empty">Look in the mirror to write your first entry.</div>';return;}wrap.innerHTML=entries.map(e=>`<div class="entry"><div class="entry-date">${sanitize(new Date(e.date).toLocaleDateString('en-GB',{weekday:'long',month:'long',day:'numeric'}))}</div><div class="entry-text">${sanitize(e.reading)}</div><div class="entry-tags"><span class="tag">${sanitize(e.expression)}</span><span class="tag">energy ${sanitize(e.energy)}%</span>${e.detectedAge?`<span class="tag">looked ${sanitize(e.detectedAge)}</span>`:''}${e.tone?`<span class="tag">tone ${sanitize(e.tone)}</span>`:''}</div></div>`).join('');}
+function exportDiary(){const payload={exportedAt:new Date().toISOString(),profile:{name:db.name,age:db.age},entries:db.entries||[]};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`mirror-diary-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+function triggerImport(){byId('import-file').click();}
+async function importDiary(event){const file=event.target.files&&event.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());const list=Array.isArray(parsed.entries)?parsed.entries:[];const valid=list.filter(e=>e&&e.date&&e.reading&&e.expression);if(!valid.length){alert('No valid entries found in file.');return;}db.entries=[...(db.entries||[]),...valid].sort((a,b)=>new Date(a.date)-new Date(b.date));saveDB();buildDiary();setMirrorMsg('Import completed.','ok');}catch{alert('Import failed. Use a valid JSON export file.');}finally{byId('import-file').value='';}}
+function openSettings(){byId('set-name').value=db.name||'';byId('set-age').value=db.age||'';byId('set-pin').value=db.pin||'';byId('set-key').value='';byId('set-model').value=db.geminiModel||appConfig.defaultModel;byId('set-key-mode').value=db.keyMode||'session';byId('set-tone').value=db.tone||'direct';showScreen('s-settings');}
+function saveSettings(){const name=byId('set-name').value.trim(),age=Number(byId('set-age').value),pin=byId('set-pin').value.trim(),typedKey=byId('set-key').value.trim(),model=byId('set-model').value.trim()||appConfig.defaultModel,keyMode=byId('set-key-mode').value==='local'?'local':'session',tone=byId('set-tone').value;if(!name||!age||age<5||age>120){alert('Please provide a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}if(typedKey&&typedKey.length<20){alert('That key looks too short.');return;}db.name=name;db.age=age;db.pin=pin||'';db.geminiModel=model;db.keyMode=keyMode;db.tone=['direct','gentle','poetic'].includes(tone)?tone:'direct';const resolved=typedKey||getApiKey();if(!resolved&&!appConfig.serverKeyConfigured){alert('No API key set. Add one, or configure GEMINI_API_KEY on server.');return;}setApiKey(resolved,keyMode);saveDB();initMirror();}
+function lockNow(){if(!db.pin){alert('Set a PIN first in settings.');return;}setUnlocked(false);showScreen('s-lock');}
+function clearAll(){if(!confirm('Delete all local profile data and diary entries? This cannot be undone.'))return;localStorage.removeItem(DB_KEY);sessionStorage.removeItem(SESSION_API_KEY);sessionStorage.removeItem(SESSION_UNLOCK);db={};pendingEntry=null;hasRegenerated=false;showScreen('s-setup');}
+window.addEventListener('load',async()=>{await loadServerConfig();db=normalizeDB(loadDB());byId('inp-name').value=db.name||'';byId('inp-age').value=db.age||'';byId('inp-pin').value=db.pin||'';byId('inp-key-mode').value=db.keyMode||'session';byId('inp-model').value=db.geminiModel||appConfig.defaultModel;byId('inp-key-mode').addEventListener('change',updateKeyNotice);updateKeyNotice();routeFromState();});
 </script>
 </body>
 </html>
