@@ -269,29 +269,32 @@ function resizedDataUrlForOCR(img,maxSide){const w=img.naturalWidth||img.width,h
 function buildLocalPhotoSummary(res){const parts=[];if(res.objects&&res.objects.length){const top=res.objects.slice(0,4).map(o=>`${o.class} ${Math.round(o.score*100)}%`);parts.push(`Objects: ${top.join(', ')}.`);}if(res.faceapi){parts.push(`Face-api: mood ${res.faceapi.topExpression||'unknown'}, energy ${res.faceapi.energy??'--'}%.`);}if(res.mediapipe&&res.mediapipe.faces>0){parts.push(`MediaPipe: ${res.mediapipe.faces} face detected with landmarks.`);}if(res.ocr&&res.ocr.text){parts.push(`OCR: "${res.ocr.text.slice(0,140)}${res.ocr.text.length>140?'...':''}"`);}if(!parts.length)parts.push('No strong signal detected.');return parts.join(' ');}
 function pickPrimaryExpression(raw){const list=Object.entries(raw||{});if(!list.length)return 'neutral';list.sort((a,b)=>b[1]-a[1]);return list[0][0]||'neutral';}
 function buildAutoRouteHints(objects){const person=(objects||[]).some(o=>o.class==='person'&&o.score>0.42);const textHintClasses=new Set(['book','cell phone','tv','laptop','keyboard','remote','mouse','stop sign']);const textHint=(objects||[]).some(o=>textHintClasses.has(o.class)&&o.score>0.32);const topScore=(objects||[])[0]?.score||0;let shouldFace=person;let shouldOcr=textHint||!person;if(topScore<0.38){shouldFace=true;shouldOcr=true;}return{shouldFace,shouldOcr};}
-async function runSmartLocalPipeline(img){
+function withTimeout(promise,ms,label){let timeoutId=null;const timeoutPromise=new Promise((_,reject)=>{timeoutId=setTimeout(()=>reject(new Error(`${label} timed out`)),ms);});return Promise.race([promise,timeoutPromise]).finally(()=>{if(timeoutId)clearTimeout(timeoutId);});}
+async function runSmartLocalPipeline(img,opts={}){
+  const options={source:'capture',enableOcr:null,stepTimeoutMs:9000,...opts};
   const res={analyzedAt:new Date().toISOString(),routed:[],objects:[],faceapi:null,mediapipe:null,ocr:null,errors:[]};
   try{
-    const coco=await ensureTfCoco();
-    res.objects=await coco.detect(img,12,0.2);
+    const coco=await withTimeout(ensureTfCoco(),options.stepTimeoutMs,'Tensor model load');
+    res.objects=await withTimeout(coco.detect(img,12,0.2),options.stepTimeoutMs,'Tensor object detection');
   }catch(e){
     res.errors.push(`Tensor/coco failed: ${e.message}`);
   }
   const route=buildAutoRouteHints(res.objects||[]);
-  const shouldFace=route.shouldFace,shouldOcr=route.shouldOcr;
+  const shouldFace=route.shouldFace;
+  const shouldOcr=typeof options.enableOcr==='boolean'?options.enableOcr:route.shouldOcr;
   if(shouldFace){
     res.routed.push('face');
     try{
-      const mp=await ensureMediapipe();
-      const mpOut=mp.detect(img);
+      const mp=await withTimeout(ensureMediapipe(),options.stepTimeoutMs,'MediaPipe load');
+      const mpOut=await withTimeout(Promise.resolve(mp.detect(img)),Math.max(3000,Math.round(options.stepTimeoutMs*0.8)),'MediaPipe detect');
       const faces=mpOut?.faceLandmarks?.length||0;
       res.mediapipe={faces,blendshapes:mpOut?.faceBlendshapes?.[0]?.categories?.slice(0,10).map(c=>({name:c.categoryName,score:Number(c.score.toFixed(4))}))||[]};
     }catch(e){
       res.errors.push(`MediaPipe failed: ${e.message}`);
     }
     try{
-      await loadModels();
-      const det=await faceapi.detectSingleFace(img,new faceapi.TinyFaceDetectorOptions()).withFaceExpressions().withAgeAndGender();
+      await withTimeout(loadModels(),options.stepTimeoutMs,'face-api model load');
+      const det=await withTimeout(faceapi.detectSingleFace(img,new faceapi.TinyFaceDetectorOptions()).withFaceExpressions().withAgeAndGender(),Math.max(3000,Math.round(options.stepTimeoutMs*0.8)),'face-api detect');
       if(det){
         const exps=det.expressions||{};
         const top=pickPrimaryExpression(exps);
@@ -305,9 +308,9 @@ async function runSmartLocalPipeline(img){
   if(shouldOcr){
     res.routed.push('ocr');
     try{
-      const T=await ensureTesseract();
+      const T=await withTimeout(ensureTesseract(),options.stepTimeoutMs,'Tesseract load');
       const dataUrl=resizedDataUrlForOCR(img,1280);
-      const out=await T.recognize(dataUrl,'eng');
+      const out=await withTimeout(T.recognize(dataUrl,'eng'),Math.max(3500,Math.round(options.stepTimeoutMs*1.2)),'OCR analyze');
       const text=(out?.data?.text||'').trim();
       res.ocr={chars:text.length,text,confidence:out?.data?.confidence?Number(out.data.confidence.toFixed(2)):null};
     }catch(e){
@@ -325,7 +328,7 @@ function goToKey(){const name=byId('inp-name').value.trim(),age=Number(byId('inp
 function unlockPin(){const pin=byId('lock-pin').value.trim();if(!db.pin){setUnlocked(true);routeFromState();return;}if(pin!==db.pin){alert('Incorrect PIN.');return;}setUnlocked(true);byId('lock-pin').value='';routeFromState();}
 function saveKey(){const key=byId('inp-key').value.trim();if(key&&key.length<20){alert('That key looks too short.');return;}if(!key&&!appConfig.serverKeyConfigured){alert('Please provide an API key, or configure GEMINI_API_KEY on server.');return;}db.keyMode='session';db.geminiModel=db.geminiModel||appConfig.defaultModel;db.entries=db.entries||[];setApiKey(key||getApiKey());saveDB();initMirror();}
 const greetingForNow=(name)=>{const h=new Date().getHours();if(h<12)return`Good morning, ${name}`;if(h<18)return`Good afternoon, ${name}`;return`Good evening, ${name}`;};
-async function initMirror(){if(mirrorInitInProgress)return;mirrorInitInProgress=true;showScreen('s-mirror');applyTheme(db.theme||'warm');byId('greeting').textContent=greetingForNow(db.name||'friend');byId('day-num').textContent=currentDayNumber();byId('result-card').classList.remove('show');byId('mirror-actions').style.display='flex';lastEntryIndex=-1;setMirrorMsg('','info');try{await loadModels();await startCam();}finally{mirrorInitInProgress=false;}}
+async function initMirror(){if(mirrorInitInProgress)return;mirrorInitInProgress=true;showScreen('s-mirror');applyTheme(db.theme||'warm');byId('greeting').textContent=greetingForNow(db.name||'friend');byId('day-num').textContent=currentDayNumber();byId('result-card').classList.remove('show');byId('mirror-actions').style.display='flex';lastEntryIndex=-1;setMirrorMsg('','info');try{await startCam();loadModels().catch(()=>{});}finally{mirrorInitInProgress=false;}}
 async function loadModels(){if(modelsReady){setCamStatus('Face analysis ready',false);return;}setCamStatus('Checking model files',true);try{const sres=await fetch('/weights/status');if(sres.ok){const s=await sres.json();if(Array.isArray(s.missing)&&s.missing.length){setCamStatus(`Downloading ${s.missing.length} model files (first run only)`,true);const p=await fetch('/weights/prefetch',{method:'POST'});if(!p.ok)setMirrorMsg('Model prefetch had issues. Continuing.', 'warn');}}}catch{setMirrorMsg('Could not pre-check model files. Continuing...','warn');}setCamStatus('Loading face analysis models',true);try{await Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL)]);modelsReady=true;setCamStatus('Face analysis ready',false);}catch{setCamStatus('Could not load face models. Check internet and retry.',false);setMirrorMsg('Model loading failed. Retry in a few seconds.','err');throw new Error('Model load failed');}}
 async function startCam(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setCamStatus('Camera API not supported.',false);setMirrorMsg('Use a recent browser.','err');return;}try{if(activeStream){activeStream.getTracks().forEach(t=>t.stop());activeStream=null;}const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:db.cameraFacing||'user'},audio:false});activeStream=stream;const v=byId('cam');v.srcObject=stream;await new Promise(r=>{v.onloadedmetadata=r});byId('cam-wrap').style.display='block';byId('scan-btn').style.display='inline-block';byId('cam-status').style.display='none';setMirrorMsg(`Camera ready (${db.cameraFacing==='environment'?'back':'front'}). Tap "Capture moment" when centered.`,'ok');}catch{setCamStatus('Camera access denied or unavailable.',false);setMirrorMsg('Allow camera permission and refresh.','err');}}
 async function switchCamera(){db.cameraFacing=db.cameraFacing==='environment'?'user':'environment';saveDB();setCamStatus('Switching camera',true);await startCam();}
@@ -333,9 +336,11 @@ function buildTrend(){const l=(db.entries||[]).slice(-7);if(!l.length)return'';c
 function pickRandom(list){return list[Math.floor(Math.random()*list.length)];}
 function normalizeWords(s){return String(s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w&&w.length>2);}
 function similarityScore(a,b){const sa=new Set(normalizeWords(a)),sb=new Set(normalizeWords(b));if(!sa.size||!sb.size)return 0;let overlap=0;for(const w of sa){if(sb.has(w))overlap+=1;}return overlap/Math.min(sa.size,sb.size);}
-function tooSimilarToRecent(text){const recent=(db.entries||[]).slice(-6).map(e=>e.reading).filter(Boolean);return recent.some(r=>similarityScore(r,text)>0.62);}
+function tooSimilarToRecent(text){const recent=(db.entries||[]).slice(-8).map(e=>e.reading).filter(Boolean);return recent.some(r=>similarityScore(r,text)>0.54);}
 function recentOpeners(){return (db.entries||[]).slice(-6).map(e=>String(e.reading||'').trim().split(/\s+/).slice(0,4).join(' ')).filter(Boolean).slice(-4);}
-function fallbackText(top,energy,prev,voice){const m={happy:['A bright edge catches on your face.','Something in you is easier to carry right now.'],sad:['There is quiet weight in your face today.','A heavier mood sits close to the surface.'],angry:['Tension shows up first, then focus.','Your face holds a sharp line today.'],neutral:['You look composed and hard to read.','Your face is calm, with little wasted motion.'],surprised:['Your features stay open and alert.','Something has your full attention.'],fearful:['You look guarded, like holding back from a ledge.','Your expression stays careful and tight.'],disgusted:['Something feels off and your face does not hide it.','You carry a clear signal of rejection today.']};const c=prev?(energy>prev.energy+10?pickRandom(['More alive than your last entry.','Energy climbed since your last scan.']):(energy<prev.energy-10?pickRandom(['Something drained you since your last entry.','Energy dropped compared with your last scan.']):pickRandom(['Close to your last entry in intensity.','A similar emotional weight to last time.']))):'First entry. The mirror is still learning your rhythm.';const voiceTail={poetic:'The image lingers a little after the words.',dramatic:'It feels like the scene just before a reveal.',humorous:'Even now, there is a tiny wink in the timing.',cinematic:'It lands like a close-up cut at the right second.'};return`${pickRandom(m[top]||['The mirror sees you.'])} ${c} ${voiceTail[voice]||''}`.trim();}
+function pickFreshCandidate(candidates){const recent=(db.entries||[]).slice(-10).map(e=>String(e.reading||'').toLowerCase());const fresh=candidates.filter(line=>!recent.some(r=>r.includes(String(line).toLowerCase())));return pickRandom(fresh.length?fresh:candidates);}
+function buildSceneHint(sceneSummary){const s=String(sceneSummary||'').trim();if(!s)return '';const short=s.length>120?`${s.slice(0,120)}...`:s;return pickFreshCandidate([`Scene hint: ${short}`,`Visual context: ${short}`,`In frame: ${short}`]);}
+function fallbackText(top,energy,prev,voice,sceneSummary){const m={happy:['A bright edge catches on your face.','Something in you is easier to carry right now.','You look like someone who just found a little air.'],sad:['There is quiet weight in your face today.','A heavier mood sits close to the surface.','You carry a soft gravity in your expression.'],angry:['Tension shows up first, then focus.','Your face holds a sharp line today.','There is heat, but it is controlled.'],neutral:['You look composed and hard to read.','Your face is calm, with little wasted motion.','You look steady, almost deliberately unreadable.'],surprised:['Your features stay open and alert.','Something has your full attention.','Your expression feels wide awake.'],fearful:['You look guarded, like holding back from a ledge.','Your expression stays careful and tight.','There is caution in the way you hold your face.'],disgusted:['Something feels off and your face does not hide it.','You carry a clear signal of rejection today.','Your expression says a clear no.']};const c=prev?(energy>prev.energy+10?pickFreshCandidate(['More alive than your last entry.','Energy climbed since your last scan.','This one lands with more lift than last time.']):(energy<prev.energy-10?pickFreshCandidate(['Something drained you since your last entry.','Energy dropped compared with your last scan.','The intensity fell compared with your last capture.']):pickFreshCandidate(['Close to your last entry in intensity.','A similar emotional weight to last time.','The emotional temperature stays near your previous scan.']))):pickFreshCandidate(['First entry. The mirror is still learning your rhythm.','First entry today; this is your baseline note.','A first note, and the pattern starts from here.']);const voiceTail={poetic:'The image lingers a little after the words.',dramatic:'It feels like the scene just before a reveal.',humorous:'Even now, there is a tiny wink in the timing.',cinematic:'It lands like a close-up cut at the right second.'};const scene=buildSceneHint(sceneSummary);return`${pickFreshCandidate(m[top]||['The mirror sees you.'])} ${c} ${scene} ${voiceTail[voice]||''}`.replace(/\s+/g,' ').trim();}
 function voiceScore(voice){const feedback=(db.entries||[]).filter(e=>e.voice===voice&&e.feedback);let score=1;feedback.forEach(e=>{if(e.feedback==='like')score+=2;else score-=0.8;});return Math.max(0.4,score);}
 function pickAdaptiveVoice(){const weighted=VOICES.map(v=>({v,w:voiceScore(v)}));const total=weighted.reduce((s,i)=>s+i.w,0);let r=Math.random()*total;for(const item of weighted){r-=item.w;if(r<=0)return item.v;}return weighted[weighted.length-1].v;}
 function buildPreferenceHints(){const recent=(db.entries||[]).slice(-30);const liked=recent.filter(e=>e.feedback==='like');const disliked=recent.filter(e=>e.feedback==='dislike');const likedVoices=[...new Set(liked.map(e=>e.voice).filter(Boolean))];const dislikedVoices=[...new Set(disliked.map(e=>e.voice).filter(Boolean))];const likedMoods=[...new Set(liked.map(e=>e.expression).filter(Boolean))];const dislikedMoods=[...new Set(disliked.map(e=>e.expression).filter(Boolean))];const bits=[];if(likedVoices.length)bits.push(`User tends to like styles: ${likedVoices.join(', ')}.`);if(dislikedVoices.length)bits.push(`User tends to dislike styles: ${dislikedVoices.join(', ')}.`);if(likedMoods.length)bits.push(`When mood is ${likedMoods.join(', ')}, keep similar quality that got likes.`);if(dislikedMoods.length)bits.push(`When mood is ${dislikedMoods.join(', ')}, avoid repetitive framing that got dislikes.`);return bits.join(' ');}
@@ -371,14 +376,16 @@ async function generateGeminiText(prompt,voice,maxTokens){
 async function callGemini(input){
   try{
     let text=await generateGeminiText(buildPrompt(input),input.voice,150);
-    if(tooSimilarToRecent(text)){
-      const nudge=`${buildPrompt(input)}\nPrevious draft was too similar to diary history. Rewrite with fresh diction and a different opening sentence.`;
-      text=await generateGeminiText(nudge,input.voice,160);
+    let tries=0;
+    while(tooSimilarToRecent(text)&&tries<2){
+      const nudge=`${buildPrompt(input)}\nPrevious draft was too similar to diary history. Rewrite with fresh diction, a different opening sentence, and different rhythm.`;
+      text=await generateGeminiText(nudge,input.voice,170);
+      tries+=1;
     }
     return text;
   }catch(err){
     setMirrorMsg(`Gemini error: ${err?.message||'Unknown error'}. Using fallback text.`,'warn');
-    return fallbackText(input.topExpression,input.energy,input.prev,input.voice);
+    return fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary);
   }
 }
 function buildNoFacePrompt(input){
@@ -394,16 +401,18 @@ function buildNoFacePrompt(input){
 }
 function fallbackNoFaceResume(input){
   const tails={poetic:'The scene keeps echoing after the words.',dramatic:'It feels like a transition shot before the next turn.',humorous:'Even the blur has a little personality.',cinematic:'It lands like a quiet cutaway.'};
-  const prev=input.prev?`It still feels connected to your last entry (${input.prev.expression}).`:'This is your first entry, so the mirror starts from atmosphere.';
-  const visual=input.visualSummary?input.visualSummary:'No clear face this time, but the moment still carries context.';
-  return `${visual} ${prev} ${tails[input.voice]||''}`.trim();
+  const prev=input.prev?pickFreshCandidate([`It still feels connected to your last entry (${input.prev.expression}).`,`It follows the same thread as your previous entry (${input.prev.expression}).`]):pickFreshCandidate(['This is your first entry, so the mirror starts from atmosphere.','First entry in this run; the scene sets the opening tone.']);
+  const visual=String(input.visualSummary||'').trim()||pickFreshCandidate(['No clear face this time, but the moment still carries context.','Face not clear, but the scene still offers signal.']);
+  return `${visual} ${prev} ${tails[input.voice]||''}`.replace(/\s+/g,' ').trim();
 }
 async function callGeminiNoFace(input){
   try{
     let text=await generateGeminiText(buildNoFacePrompt(input),input.voice,150);
-    if(tooSimilarToRecent(text)){
-      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft was too similar to diary history. Rewrite with fresh diction and a different opening sentence.`;
-      text=await generateGeminiText(nudge,input.voice,160);
+    let tries=0;
+    while(tooSimilarToRecent(text)&&tries<2){
+      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft was too similar to diary history. Rewrite with fresh diction, a different opening sentence, and different rhythm.`;
+      text=await generateGeminiText(nudge,input.voice,170);
+      tries+=1;
     }
     return text;
   }catch(err){
@@ -420,10 +429,13 @@ function capturePhotoSnapshot(options={}){const v=byId('cam');if(!v||!v.videoWid
 function loadImageFromDataUrl(dataUrl){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('Snapshot decode failed.'));img.src=dataUrl;});}
 function shouldAutoKeepPhoto(mode){if(db.photoMode==='always')return true;if(db.photoMode==='never')return false;if(mode==='no_face_resume')return true;return false;}
 async function doScan(){
-  if(scanBusy)return;
-  if(!modelsReady){setMirrorMsg('Face models are not ready yet.','warn');return;}
+  if(scanBusy){setMirrorMsg('Previous capture is still being processed...','info');return;}
+  if(!activeStream){setMirrorMsg('Camera is not ready yet.','warn');return;}
   scanBusy=true;
   const ov=byId('cam-overlay'),btn=byId('scan-btn');
+  const btnLabel=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='Processing...';
   ov.classList.add('show');btn.style.display='none';byId('result-card').classList.remove('show');setMirrorMsg('','info');
   try{
     const ticks=['3','2','1'];
@@ -437,7 +449,21 @@ async function doScan(){
 
     const nowIso=new Date().toISOString(),todayKey=dateKey(nowIso),dayList=sortedUniqueDays(),dayN=dayList.includes(todayKey)?dayList.indexOf(todayKey)+1:dayList.length+1,scanInDay=((db.entries||[]).filter(e=>dateKey(e.date)===todayKey).length)+1;
     const prev=db.entries?.slice(-1)[0]||null,voice=pickAdaptiveVoice();
-    const local=await runSmartLocalPipeline(detectTarget);
+    byId('cam-overlay-text').textContent='analyzing moment...';
+    const local=await withTimeout(
+      runSmartLocalPipeline(detectTarget,{source:'capture',enableOcr:false,stepTimeoutMs:7000}),
+      15000,
+      'Capture analysis',
+    ).catch((err)=>({
+      analyzedAt:new Date().toISOString(),
+      routed:['objects-only'],
+      objects:[],
+      faceapi:null,
+      mediapipe:null,
+      ocr:null,
+      errors:[`Capture analysis fallback: ${err?.message||'timeout'}`],
+      summary:'Quick scene analysis fallback used after timeout.',
+    }));
     LOCAL_ANALYZER.lastResult={...local,imageDataUrl:capturedFrame||null};
     if(local.errors.length){setMirrorMsg(`Local analysis had ${local.errors.length} warning(s), continuing with best result.`,'warn');}
 
@@ -475,6 +501,8 @@ async function doScan(){
   }finally{
     byId('cam-overlay-text').textContent='reading your face...';
     ov.classList.remove('show');
+    btn.disabled=false;
+    btn.textContent=btnLabel;
     btn.style.display='inline-block';
     scanBusy=false;
   }
