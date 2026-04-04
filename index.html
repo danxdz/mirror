@@ -489,6 +489,27 @@ function inferActionCue(objects,sceneSummary){
   if(scene.includes('around you:'))return pickFreshCandidate(['The setting is doing part of the storytelling today.','Your environment is loud enough to become part of the caption.','The room adds context to your mood, and it shows.']);
   return pickFreshCandidate(['This feels like a quick life-update selfie moment.','You caught a real in-between moment, not a posed one.','This frame looks candid, alive, and very now.']);
 }
+function buildVisualAnchors(objects,sceneSummary){
+  const labels=(objects||[]).slice(0,6).map(o=>String(o.class||'').toLowerCase().trim()).filter(Boolean);
+  const normalized=[];
+  labels.forEach(label=>{
+    normalized.push(label);
+    if(label==='cell phone')normalized.push('phone');
+    if(label==='tv')normalized.push('screen');
+  });
+  const scene=String(sceneSummary||'').toLowerCase();
+  if(scene.includes('around you:'))normalized.push('around you');
+  if(scene.includes('expression'))normalized.push('expression');
+  if(scene.includes('words in frame'))normalized.push('words');
+  const base=['light','frame','background'];
+  const anchors=[...new Set([...normalized,...base])].filter(Boolean).slice(0,8);
+  return anchors.length?anchors:base;
+}
+function textMentionsAnchors(text,anchors){
+  const t=String(text||'').toLowerCase();
+  const list=Array.isArray(anchors)?anchors:[];
+  return list.some(a=>String(a||'').trim()&&t.includes(String(a).toLowerCase()));
+}
 function getProfilePreferences(context={}){
   const memory=db.profileMemory&&typeof db.profileMemory==='object'?db.profileMemory:refreshProfileMemory();
   const hour=Number.isFinite(context.hour)?String(context.hour):null;
@@ -507,7 +528,7 @@ function getProfilePreferences(context={}){
     mood,
   };
 }
-function fallbackText(top,energy,prev,voice,sceneSummary,actionCue){
+function fallbackText(top,energy,prev,voice,sceneSummary,actionCue,visualAnchors){
   const openers={
     happy:['Light is finding you before words do.','There is a grin hiding in your posture.','You look like a page turning toward good news.'],
     sad:['Today carries a little rain in it.','The weight is real, but so is your steadiness.','You look tender, not broken.'],
@@ -529,7 +550,9 @@ function fallbackText(top,energy,prev,voice,sceneSummary,actionCue){
   };
   const scene=buildSceneHint(sceneSummary);
   const action=String(actionCue||'').trim();
-  return `${pickFreshCandidate(openers[top]||openers.neutral)} ${action} ${shift} ${scene} ${vibeTail[voice]||vibeTail.direct}`.replace(/\s+/g,' ').trim();
+  const anchor=(visualAnchors||[]).find(Boolean);
+  const anchorLine=anchor?`Photo cue: ${anchor}.`:'';
+  return `${pickFreshCandidate(openers[top]||openers.neutral)} ${action} ${anchorLine} ${shift} ${scene} ${vibeTail[voice]||vibeTail.direct}`.replace(/\s+/g,' ').trim();
 }
 function voiceScore(voice,context={}){
   const memory=db.profileMemory&&typeof db.profileMemory==='object'?db.profileMemory:refreshProfileMemory();
@@ -584,6 +607,8 @@ function buildPrompt(input){
   const angle=pickRandom(['Write like a strong Instagram selfie caption, but still personal and real.','Use one sensory detail (light, sound, texture, temperature).','Use one unexpected but fitting comparison.','Keep cadence dynamic: one short punchy sentence + one longer expressive sentence.']);
   const moodPct=Math.round(Number(input.expressions?.[input.topExpression]||0)*100);
   const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid selfie check-in moment.';
+  const anchors=(input.visualAnchors||[]).filter(Boolean).slice(0,8);
+  const anchorsLine=`Visual anchors from the photo: ${anchors.join(', ')}.`;
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
 Person: ${input.name}, age ${input.realAge}. Day ${input.dayN}, scan ${input.scanInDay} today.
@@ -591,6 +616,7 @@ Detected mood: ${input.topExpression} (${moodPct}%), energy ${input.energy}/100,
 Face signal details: ${input.faceSummary}
 ${scene}
 ${actionLine}
+${anchorsLine}
 ${prev} ${trend}
 ${style}
 Memory hints (local-only): ${pref.text}
@@ -599,6 +625,7 @@ Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 
 Write exactly 2-4 sentences in selfie-caption style.
 Sentence 1: mood hook. Sentence 2: what the person is doing right now. Final sentence: motivating line that feels confident and warm.
+You MUST mention at least one visual anchor from the list.
 Optional: at most one short hashtag at the very end.
 No therapy script. No mention of model names, percentages, or technical pipelines.`;
 }
@@ -622,17 +649,19 @@ async function generateGeminiText(prompt,voice,maxTokens){
 }
 async function callGemini(input){
   try{
+    const anchors=(input.visualAnchors||[]).filter(Boolean);
     let text=await generateGeminiText(buildPrompt(input),input.voice,220);
     let tries=0;
-    while((tooSimilarToRecent(text)||startsLikeRecent(text))&&tries<3){
-      const nudge=`${buildPrompt(input)}\nPrevious draft is still too close to recent entries. Rewrite with a completely different opener, clearer action line, and stronger caption energy.`;
+    while((tooSimilarToRecent(text)||startsLikeRecent(text)||(anchors.length&&!textMentionsAnchors(text,anchors)))&&tries<4){
+      const anchorNudge=anchors.length?`Also ensure the text explicitly mentions at least one of these anchors: ${anchors.join(', ')}.`:'';
+      const nudge=`${buildPrompt(input)}\nPrevious draft is still too close to recent entries or missed photo details. Rewrite with a completely different opener, clearer action line, and stronger caption energy. ${anchorNudge}`;
       text=await generateGeminiText(nudge,input.voice,235);
       tries+=1;
     }
     return text;
   }catch{
     setMirrorMsg('Writing service was slow, so this entry used local style fallback.','info');
-    return fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary,input.actionCue);
+    return fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary,input.actionCue,input.visualAnchors);
   }
 }
 function buildNoFacePrompt(input){
@@ -645,12 +674,15 @@ function buildNoFacePrompt(input){
   const pref=buildPreferenceHints({hour:input.hour,moodCluster:input.moodCluster});
   const angle=pickRandom(['Write this like a strong Instagram selfie caption, but grounded and personal.','Build meaning from objects and atmosphere, not face data.','Use one grounded detail and one emotional inference.']);
   const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid scene-based check-in.';
+  const anchors=(input.visualAnchors||[]).filter(Boolean).slice(0,8);
+  const anchorsLine=`Visual anchors from the photo: ${anchors.join(', ')}.`;
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
 Person: ${input.name}, age ${input.realAge}. Day ${input.dayN}, scan ${input.scanInDay} today.
 No clear face was detected this time.
 ${visual}
 ${actionLine}
+${anchorsLine}
 Recent diary context: ${input.recentSummary||'none'}
 ${prev} ${trend}
 ${style}
@@ -660,6 +692,7 @@ Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 
 Write exactly 2-4 sentences in selfie-caption style.
 Sentence 1: mood hook from scene. Sentence 2: what the person seems to be doing right now. Final sentence: motivating line that feels confident and warm.
+You MUST mention at least one visual anchor from the list.
 Optional: at most one short hashtag at the very end.
 No therapy script. No mention of model names or technical pipelines.`;
 }
@@ -670,17 +703,21 @@ function fallbackNoFaceResume(input){
     'Even without a face lock, this capture carries mood.'
   ]);
   const action=String(input.actionCue||'').trim();
+  const anchor=(input.visualAnchors||[]).find(Boolean);
+  const anchorLine=anchor?`Photo cue: ${anchor}.`:'';
   const scene=buildSceneHint(input.visualSummary);
   const bridge=input.prev?pickFreshCandidate([`It still feels connected to your last entry (${input.prev.expression}).`,`It follows the emotional thread of your previous note (${input.prev.expression}).`]):pickFreshCandidate(['This is a clean start, and atmosphere leads the first line.','First note in this run, so the room sets the tone.']);
   const tail={poetic:'Caption this: you are still becoming, even in quiet frames.',dramatic:'Episode note: this is tension, not the ending.',humorous:'This post says: chaotic maybe, iconic definitely.',cinematic:'Freeze-frame it, then step into the next scene.'};
-  return `${open} ${action} ${scene} ${bridge} ${tail[input.voice]||'Post energy: keep moving, you are not done yet.'}`.replace(/\s+/g,' ').trim();
+  return `${open} ${action} ${anchorLine} ${scene} ${bridge} ${tail[input.voice]||'Post energy: keep moving, you are not done yet.'}`.replace(/\s+/g,' ').trim();
 }
 async function callGeminiNoFace(input){
   try{
+    const anchors=(input.visualAnchors||[]).filter(Boolean);
     let text=await generateGeminiText(buildNoFacePrompt(input),input.voice,220);
     let tries=0;
-    while((tooSimilarToRecent(text)||startsLikeRecent(text))&&tries<3){
-      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft is still too close to recent entries. Rewrite with a different opening, clearer action line, and stronger caption energy.`;
+    while((tooSimilarToRecent(text)||startsLikeRecent(text)||(anchors.length&&!textMentionsAnchors(text,anchors)))&&tries<4){
+      const anchorNudge=anchors.length?`Also ensure the text explicitly mentions at least one of these anchors: ${anchors.join(', ')}.`:'';
+      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft is still too close to recent entries or missed photo details. Rewrite with a different opening, clearer action line, and stronger caption energy. ${anchorNudge}`;
       text=await generateGeminiText(nudge,input.voice,235);
       tries+=1;
     }
@@ -779,6 +816,7 @@ async function doScan(){
 
     const face=local.faceapi||null;
     const actionCue=inferActionCue(local.objects||[],local.summary);
+    const visualAnchors=buildVisualAnchors(local.objects||[],local.summary);
     byId('cam-overlay-text').textContent='writing your entry...';
     if(face){
       const top=face.topExpression||'neutral';
@@ -791,7 +829,7 @@ async function doScan(){
       const faceSummary=Object.entries(expSummary).map(([k,v])=>`${k}:${v}%`).join(', ');
       const objectHints=(local.objects||[]).slice(0,4).map(o=>`${o.class} ${Math.round(o.score*100)}%`).join(', ');
       lastFaceReadings={capturedAt:nowIso,dayN,scanInDay,topExpression:top,energy,detectedAge:detAge,estimatedGender:face.estimatedGender||null,genderProbability:face.genderProbability??null,expressions:expSummary,objects:objectHints||null,routed:local.routed||[]};
-      const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,moodCluster,hour:nowHour,faceSummary,sceneSummary:local.summary,actionCue});
+      const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,moodCluster,hour:nowHour,faceSummary,sceneSummary:local.summary,actionCue,visualAnchors});
       const photoDataUrl=await decidePhotoDataUrl('face_scan',capturedFrame);
       db.entries.push({date:nowIso,expression:top,energy,detectedAge:detAge,voice,feedback:null,photoDataUrl,linkedPhotos:[],faceReadings:lastFaceReadings,analysisPayload:local,reading});
       refreshProfileMemory();
@@ -802,7 +840,7 @@ async function doScan(){
     const moodCluster=getMoodCluster(prev?.expression,prev?.energy);
     const voice=pickAdaptiveVoice({hour:nowHour,moodCluster});
     const recent=(db.entries||[]).slice(-3).map(e=>`${e.expression||'unknown'} @ ${e.energy||'--'}%: ${String(e.reading||'').slice(0,90)}`).join(' | ');
-    const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,visualSummary:local.summary,prev,voice,moodCluster,hour:nowHour,actionCue});
+    const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,visualSummary:local.summary,prev,voice,moodCluster,hour:nowHour,actionCue,visualAnchors});
     const photoDataUrl=await decidePhotoDataUrl('no_face_resume',capturedFrame);
     const linkedPhotos=(db.entries||[]).slice().reverse().map(e=>e.photoDataUrl).filter(Boolean).slice(0,2);
     const topObject=(local.objects||[])[0]?.class||'no_face';
