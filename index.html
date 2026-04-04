@@ -476,6 +476,19 @@ function buildSceneHint(sceneSummary){
   const short=s.length>120?`${s.slice(0,120)}...`:s;
   return pickFreshCandidate([`In the frame, ${short.toLowerCase()}`,`The room says: ${short.toLowerCase()}`,`Around you, ${short.toLowerCase()}`]);
 }
+function inferActionCue(objects,sceneSummary){
+  const labels=[...new Set((objects||[]).slice(0,6).map(o=>String(o.class||'').toLowerCase().trim()).filter(Boolean))];
+  const hasAny=(arr)=>arr.some(k=>labels.includes(k));
+  if(hasAny(['laptop','keyboard','mouse','tv','cell phone']))return pickFreshCandidate(['You look deep in screen mode, half focused and half feeling things.','This is a mid-scroll, mid-thought kind of moment.','You look like you paused work for one honest mirror check.']);
+  if(hasAny(['book']))return pickFreshCandidate(['You have a reading-night energy, thoughtful and inward.','This feels like a page-break moment with your thoughts still open.','You look like someone between chapters and decisions.']);
+  if(hasAny(['cup','bottle','wine glass']))return pickFreshCandidate(['You are in a quiet sip-and-reset moment.','This looks like a pause where you breathe and recalibrate.','It has late-coffee reflection energy.']);
+  if(hasAny(['bed','couch','chair']))return pickFreshCandidate(['You look in rest mode, but your mind is still active.','This is a soft reset scene, not a shutdown.','You are parked for a minute, processing the day.']);
+  if(hasAny(['car','bus','bicycle']))return pickFreshCandidate(['You look between places, carrying the day with you.','This has transit energy: moving body, busy head.','You look in motion even in a still frame.']);
+  if(hasAny(['person']))return pickFreshCandidate(['You are fully present in this shot, owning the moment.','This feels like a direct check-in with yourself.','You look like you decided to show up honestly.']);
+  const scene=String(sceneSummary||'').toLowerCase();
+  if(scene.includes('around you:'))return pickFreshCandidate(['The setting is doing part of the storytelling today.','Your environment is loud enough to become part of the caption.','The room adds context to your mood, and it shows.']);
+  return pickFreshCandidate(['This feels like a quick life-update selfie moment.','You caught a real in-between moment, not a posed one.','This frame looks candid, alive, and very now.']);
+}
 function getProfilePreferences(context={}){
   const memory=db.profileMemory&&typeof db.profileMemory==='object'?db.profileMemory:refreshProfileMemory();
   const hour=Number.isFinite(context.hour)?String(context.hour):null;
@@ -494,7 +507,7 @@ function getProfilePreferences(context={}){
     mood,
   };
 }
-function fallbackText(top,energy,prev,voice,sceneSummary){
+function fallbackText(top,energy,prev,voice,sceneSummary,actionCue){
   const openers={
     happy:['Light is finding you before words do.','There is a grin hiding in your posture.','You look like a page turning toward good news.'],
     sad:['Today carries a little rain in it.','The weight is real, but so is your steadiness.','You look tender, not broken.'],
@@ -506,16 +519,17 @@ function fallbackText(top,energy,prev,voice,sceneSummary){
   };
   const shift=prev?(energy>prev.energy+10?pickFreshCandidate(['Your energy lifted since the last entry.','This one feels more alive than the previous moment.']):(energy<prev.energy-10?pickFreshCandidate(['You are running lower than the last capture.','This moment lands softer than before.']):pickFreshCandidate(['The emotional temperature stays close to your last note.','This sits in the same zone as your previous entry.']))):pickFreshCandidate(['First note: the mirror is learning your pace.','First capture in this run, starting from here.']);
   const vibeTail={
-    direct:'Keep one small promise to yourself in the next hour.',
-    gentle:'Be kind to yourself in the next small step.',
-    poetic:'Even now, tomorrow is already rehearsing a softer light.',
-    observational:'Small signal: you are still here, still adjusting forward.',
-    dramatic:'This is a scene break, not the final frame.',
-    humorous:'If nothing else, your plot is definitely not boring.',
-    cinematic:'The next shot can still shift the whole mood.'
+    direct:'Post this energy to your own life: one clear move next.',
+    gentle:'You are allowed to go softer and still go forward.',
+    poetic:'Hold this frame; it proves you are still becoming.',
+    observational:'Status update: still standing, still adapting, still in it.',
+    dramatic:'This is an episode beat, not the ending.',
+    humorous:'Honestly, this character arc is getting good.',
+    cinematic:'Cut to next scene: you choose the tone.'
   };
   const scene=buildSceneHint(sceneSummary);
-  return `${pickFreshCandidate(openers[top]||openers.neutral)} ${shift} ${scene} ${vibeTail[voice]||vibeTail.direct}`.replace(/\s+/g,' ').trim();
+  const action=String(actionCue||'').trim();
+  return `${pickFreshCandidate(openers[top]||openers.neutral)} ${action} ${shift} ${scene} ${vibeTail[voice]||vibeTail.direct}`.replace(/\s+/g,' ').trim();
 }
 function voiceScore(voice,context={}){
   const memory=db.profileMemory&&typeof db.profileMemory==='object'?db.profileMemory:refreshProfileMemory();
@@ -567,23 +581,26 @@ function buildPrompt(input){
   const scene=input.sceneSummary?`Scene notes: ${input.sceneSummary}`:'Scene notes: minimal scene signal.';
   const blocked=recentOpeners();
   const pref=buildPreferenceHints({hour:input.hour,moodCluster:input.moodCluster});
-  const angle=pickRandom(['Write like a private thought whispered to self.','Use one sensory detail (light, sound, texture, temperature).','Use one unexpected but fitting comparison.','Keep cadence dynamic: one short sentence + one longer sentence.']);
+  const angle=pickRandom(['Write like a strong Instagram selfie caption, but still personal and real.','Use one sensory detail (light, sound, texture, temperature).','Use one unexpected but fitting comparison.','Keep cadence dynamic: one short punchy sentence + one longer expressive sentence.']);
   const moodPct=Math.round(Number(input.expressions?.[input.topExpression]||0)*100);
+  const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid selfie check-in moment.';
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
 Person: ${input.name}, age ${input.realAge}. Day ${input.dayN}, scan ${input.scanInDay} today.
 Detected mood: ${input.topExpression} (${moodPct}%), energy ${input.energy}/100, mood cluster ${input.moodCluster}.
 Face signal details: ${input.faceSummary}
 ${scene}
+${actionLine}
 ${prev} ${trend}
 ${style}
 Memory hints (local-only): ${pref.text}
 Creative angle: ${angle}
 Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 
-Write exactly 2-4 sentences as an inner diary note.
-Final sentence should include subtle motivation fitted to this mood.
-No emojis. No hashtags. No therapy script. No mention of model names, percentages, or technical pipelines.`;
+Write exactly 2-4 sentences in selfie-caption style.
+Sentence 1: mood hook. Sentence 2: what the person is doing right now. Final sentence: motivating line that feels confident and warm.
+Optional: at most one short hashtag at the very end.
+No therapy script. No mention of model names, percentages, or technical pipelines.`;
 }
 async function generateGeminiText(prompt,voice,maxTokens){
   const tempByVoice={direct:0.7,gentle:0.82,poetic:0.98,observational:0.76,dramatic:1.0,humorous:0.95,cinematic:0.96};
@@ -605,17 +622,17 @@ async function generateGeminiText(prompt,voice,maxTokens){
 }
 async function callGemini(input){
   try{
-    let text=await generateGeminiText(buildPrompt(input),input.voice,190);
+    let text=await generateGeminiText(buildPrompt(input),input.voice,220);
     let tries=0;
     while((tooSimilarToRecent(text)||startsLikeRecent(text))&&tries<3){
-      const nudge=`${buildPrompt(input)}\nPrevious draft is still too close to recent entries. Rewrite with a completely different opener, fresh metaphors, and a different sentence rhythm.`;
-      text=await generateGeminiText(nudge,input.voice,210);
+      const nudge=`${buildPrompt(input)}\nPrevious draft is still too close to recent entries. Rewrite with a completely different opener, clearer action line, and stronger caption energy.`;
+      text=await generateGeminiText(nudge,input.voice,235);
       tries+=1;
     }
     return text;
   }catch{
     setMirrorMsg('Writing service was slow, so this entry used local style fallback.','info');
-    return fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary);
+    return fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary,input.actionCue);
   }
 }
 function buildNoFacePrompt(input){
@@ -626,12 +643,14 @@ function buildNoFacePrompt(input){
   const visual=input.visualSummary?`Visual scene notes: ${input.visualSummary}`:'Visual scene notes: minimal scene signal.';
   const blocked=recentOpeners();
   const pref=buildPreferenceHints({hour:input.hour,moodCluster:input.moodCluster});
-  const angle=pickRandom(['Write this like a small internal monologue.','Build meaning from objects and atmosphere, not face data.','Use one grounded detail and one emotional inference.']);
+  const angle=pickRandom(['Write this like a strong Instagram selfie caption, but grounded and personal.','Build meaning from objects and atmosphere, not face data.','Use one grounded detail and one emotional inference.']);
+  const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid scene-based check-in.';
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
 Person: ${input.name}, age ${input.realAge}. Day ${input.dayN}, scan ${input.scanInDay} today.
 No clear face was detected this time.
 ${visual}
+${actionLine}
 Recent diary context: ${input.recentSummary||'none'}
 ${prev} ${trend}
 ${style}
@@ -639,9 +658,10 @@ Memory hints (local-only): ${pref.text}
 Creative angle: ${angle}
 Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 
-Write exactly 2-4 sentences as an inner diary note.
-Final sentence should include subtle motivation fitted to the scene mood.
-No emojis. No hashtags. No therapy script. No mention of model names or technical pipelines.`;
+Write exactly 2-4 sentences in selfie-caption style.
+Sentence 1: mood hook from scene. Sentence 2: what the person seems to be doing right now. Final sentence: motivating line that feels confident and warm.
+Optional: at most one short hashtag at the very end.
+No therapy script. No mention of model names or technical pipelines.`;
 }
 function fallbackNoFaceResume(input){
   const open=pickFreshCandidate([
@@ -649,18 +669,19 @@ function fallbackNoFaceResume(input){
     'The face signal is faint, yet the scene still speaks.',
     'Even without a face lock, this capture carries mood.'
   ]);
+  const action=String(input.actionCue||'').trim();
   const scene=buildSceneHint(input.visualSummary);
   const bridge=input.prev?pickFreshCandidate([`It still feels connected to your last entry (${input.prev.expression}).`,`It follows the emotional thread of your previous note (${input.prev.expression}).`]):pickFreshCandidate(['This is a clean start, and atmosphere leads the first line.','First note in this run, so the room sets the tone.']);
-  const tail={poetic:'You are still becoming, even in quieter frames.',dramatic:'The next scene can still change everything.',humorous:'Plot twist potential remains very high.',cinematic:'This is an in-between shot, not the ending.'};
-  return `${open} ${scene} ${bridge} ${tail[input.voice]||'The next moment can still turn brighter.'}`.replace(/\s+/g,' ').trim();
+  const tail={poetic:'Caption this: you are still becoming, even in quiet frames.',dramatic:'Episode note: this is tension, not the ending.',humorous:'This post says: chaotic maybe, iconic definitely.',cinematic:'Freeze-frame it, then step into the next scene.'};
+  return `${open} ${action} ${scene} ${bridge} ${tail[input.voice]||'Post energy: keep moving, you are not done yet.'}`.replace(/\s+/g,' ').trim();
 }
 async function callGeminiNoFace(input){
   try{
-    let text=await generateGeminiText(buildNoFacePrompt(input),input.voice,190);
+    let text=await generateGeminiText(buildNoFacePrompt(input),input.voice,220);
     let tries=0;
     while((tooSimilarToRecent(text)||startsLikeRecent(text))&&tries<3){
-      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft is still too close to recent entries. Rewrite with a different opening and a fresh rhythm.`;
-      text=await generateGeminiText(nudge,input.voice,210);
+      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft is still too close to recent entries. Rewrite with a different opening, clearer action line, and stronger caption energy.`;
+      text=await generateGeminiText(nudge,input.voice,235);
       tries+=1;
     }
     return text;
@@ -757,6 +778,7 @@ async function doScan(){
     if(local.errors.length){setMirrorMsg('Capture completed with a light fallback path.','info');}
 
     const face=local.faceapi||null;
+    const actionCue=inferActionCue(local.objects||[],local.summary);
     byId('cam-overlay-text').textContent='writing your entry...';
     if(face){
       const top=face.topExpression||'neutral';
@@ -769,7 +791,7 @@ async function doScan(){
       const faceSummary=Object.entries(expSummary).map(([k,v])=>`${k}:${v}%`).join(', ');
       const objectHints=(local.objects||[]).slice(0,4).map(o=>`${o.class} ${Math.round(o.score*100)}%`).join(', ');
       lastFaceReadings={capturedAt:nowIso,dayN,scanInDay,topExpression:top,energy,detectedAge:detAge,estimatedGender:face.estimatedGender||null,genderProbability:face.genderProbability??null,expressions:expSummary,objects:objectHints||null,routed:local.routed||[]};
-      const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,moodCluster,hour:nowHour,faceSummary,sceneSummary:local.summary});
+      const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,moodCluster,hour:nowHour,faceSummary,sceneSummary:local.summary,actionCue});
       const photoDataUrl=await decidePhotoDataUrl('face_scan',capturedFrame);
       db.entries.push({date:nowIso,expression:top,energy,detectedAge:detAge,voice,feedback:null,photoDataUrl,linkedPhotos:[],faceReadings:lastFaceReadings,analysisPayload:local,reading});
       refreshProfileMemory();
@@ -780,7 +802,7 @@ async function doScan(){
     const moodCluster=getMoodCluster(prev?.expression,prev?.energy);
     const voice=pickAdaptiveVoice({hour:nowHour,moodCluster});
     const recent=(db.entries||[]).slice(-3).map(e=>`${e.expression||'unknown'} @ ${e.energy||'--'}%: ${String(e.reading||'').slice(0,90)}`).join(' | ');
-    const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,visualSummary:local.summary,prev,voice,moodCluster,hour:nowHour});
+    const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,visualSummary:local.summary,prev,voice,moodCluster,hour:nowHour,actionCue});
     const photoDataUrl=await decidePhotoDataUrl('no_face_resume',capturedFrame);
     const linkedPhotos=(db.entries||[]).slice().reverse().map(e=>e.photoDataUrl).filter(Boolean).slice(0,2);
     const topObject=(local.objects||[])[0]?.class||'no_face';
