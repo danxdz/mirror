@@ -15,19 +15,15 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - Delete diary entries with confirmation
 - Feedback + delete controls inside diary entry cards
 - Face-API readings popup to inspect live detection stats
-- If face is not detected, optional "resume entry" can still be saved from recent context
-- No-face resume entries can optionally keep current snapshot and link recent previous photos
+- If face is not detected, capture still auto-saves a scene-based entry from local analysis
+- Scene entries can keep snapshot context (depending on snapshot setting)
 - Theme customization (`Warm`, `Ocean`, `Forest`, `Night`)
 - Camera switch button (front/back)
 - 3-2-1 capture countdown for more accurate "moment" scans
-- Smart auto decisions by engine (minimal prompts only when uncertain)
+- Smart auto decisions by engine (capture-first, no extra analysis screens)
 - Diary grouped by day with multiple scans inside each day
-- Local Photo Analyzer: same smart pipeline used by live capture
-  - `TensorFlow.js + coco-ssd` for object/person detection
-  - `MediaPipe Face Landmarker` + `face-api.js` for face details
-  - `Tesseract.js` OCR for text extraction
-  - Save local analysis summary into diary without uploading image
 - Snapshot save preference (`Only when useful` / `Always` / `Never`)
+- Prompt hardening to reduce repetitive phrasing across entries
 - Optional PIN lock for local diary privacy
 - Export/import diary JSON backups
 - Session-first API key handling for privacy
@@ -41,7 +37,7 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - Diary text generation is sent to Gemini API (through `/gemini` on backend).
 - Diary entries are stored in browser local storage.
 - API key is session-first for privacy.
-- Photo Analyzer analysis (`TensorFlow.js`, `MediaPipe`, `face-api.js`, `Tesseract.js`) runs locally in-browser.
+- Local visual analysis (`TensorFlow.js`, `MediaPipe`, `face-api.js`, `Tesseract.js`) runs locally in-browser.
 
 ## Stack
 
