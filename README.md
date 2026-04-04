@@ -15,14 +15,17 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - If face is not detected, optional "resume entry" can still be saved from recent context
 - No-face resume entries can optionally keep current snapshot and link recent previous photos
 - Theme customization (`Warm`, `Ocean`, `Forest`, `Night`)
-- Camera switch button (front/back) + preferred default camera
-- Photo snapshot preference per scan (`ask`, `always`, `never`)
+- Camera switch button (front/back)
+- Smart auto decisions by engine (minimal prompts only when uncertain)
 - Diary grouped by day with multiple scans inside each day
+- Local Photo Lab: route analysis by content using on-device models
+  - `TensorFlow.js + coco-ssd` for object/person detection
+  - `MediaPipe Face Landmarker` + `face-api.js` for face details
+  - `Tesseract.js` OCR for text extraction
+  - Save local analysis summary into diary without uploading image
 - Optional PIN lock for local diary privacy
 - Export/import diary JSON backups
-- Safer API key modes:
-  - `session` (recommended): key is forgotten when tab closes
-  - `local`: key is saved in browser storage
+- Session-first API key handling for privacy
 - Optional server key mode with `GEMINI_API_KEY`
 - Auto-download face model files from server when missing
 - Render-ready backend (`Flask` + `gunicorn`)
@@ -32,7 +35,8 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - Face analysis runs in the browser.
 - Diary text generation is sent to Gemini API (through `/gemini` on backend).
 - Diary entries are stored in browser local storage.
-- API key storage depends on selected mode.
+- API key is session-first for privacy.
+- Photo Lab analysis (`TensorFlow.js`, `MediaPipe`, `face-api.js`, `Tesseract.js`) runs locally in-browser.
 
 ## Stack
 
@@ -94,7 +98,7 @@ python -m unittest discover -s tests -p "test_*.py"
 If you see Gemini errors:
 
 1. Verify API key is valid and active in Google AI Studio.
-2. In app settings, try model `gemini-2.0-flash`.
+2. Keep using the default model unless debugging.
 3. If using server key mode, confirm `GEMINI_API_KEY` is set in Render environment variables.
 4. Check Render logs for upstream `4xx/5xx` messages.
 5. If API fails, app falls back to local text so diary flow still works.
