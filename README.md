@@ -16,13 +16,15 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - No-face resume entries can optionally keep current snapshot and link recent previous photos
 - Theme customization (`Warm`, `Ocean`, `Forest`, `Night`)
 - Camera switch button (front/back)
+- 3-2-1 capture countdown for more accurate "moment" scans
 - Smart auto decisions by engine (minimal prompts only when uncertain)
 - Diary grouped by day with multiple scans inside each day
-- Local Photo Lab: route analysis by content using on-device models
+- Local Photo Analyzer: route analysis by content using on-device models
   - `TensorFlow.js + coco-ssd` for object/person detection
   - `MediaPipe Face Landmarker` + `face-api.js` for face details
   - `Tesseract.js` OCR for text extraction
   - Save local analysis summary into diary without uploading image
+- Snapshot save preference (`Only when useful` / `Always` / `Never`)
 - Optional PIN lock for local diary privacy
 - Export/import diary JSON backups
 - Session-first API key handling for privacy
@@ -36,7 +38,7 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - Diary text generation is sent to Gemini API (through `/gemini` on backend).
 - Diary entries are stored in browser local storage.
 - API key is session-first for privacy.
-- Photo Lab analysis (`TensorFlow.js`, `MediaPipe`, `face-api.js`, `Tesseract.js`) runs locally in-browser.
+- Photo Analyzer analysis (`TensorFlow.js`, `MediaPipe`, `face-api.js`, `Tesseract.js`) runs locally in-browser.
 
 ## Stack
 
