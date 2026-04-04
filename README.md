@@ -6,6 +6,9 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 ## Highlights
 
 - Browser camera scan + `face-api.js` mood/age/energy signals
+- Unified smart pipeline for every capture:
+  - `TensorFlow.js + coco-ssd` first (scene/object routing)
+  - then auto-route to `face-api.js` / `MediaPipe` / `Tesseract.js` as needed
 - Gemini-generated diary text auto-saved on each scan
 - Like/Not me feedback on each entry
 - Random writing style per entry, adapted over time from feedback
@@ -19,7 +22,7 @@ It detects facial signals in the browser, drafts a short reflection with Gemini,
 - 3-2-1 capture countdown for more accurate "moment" scans
 - Smart auto decisions by engine (minimal prompts only when uncertain)
 - Diary grouped by day with multiple scans inside each day
-- Local Photo Analyzer: route analysis by content using on-device models
+- Local Photo Analyzer: same smart pipeline used by live capture
   - `TensorFlow.js + coco-ssd` for object/person detection
   - `MediaPipe Face Landmarker` + `face-api.js` for face details
   - `Tesseract.js` OCR for text extraction

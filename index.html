@@ -106,12 +106,96 @@ function setPhotoMsg(text,type){const el=byId('photo-msg');if(!el)return;if(!tex
 function openPhotoLab(){showScreen('s-photo');setPhotoMsg('Choose a photo for private on-device analysis.','info');}
 function onPhotoChosen(event){const file=event.target.files&&event.target.files[0];if(!file){setPhotoMsg('No photo selected.','warn');return;}const reader=new FileReader();reader.onload=()=>{const img=byId('photo-preview');img.src=String(reader.result||'');img.style.display='block';byId('photo-summary').textContent='Photo ready. Click "Analyze photo".';byId('photo-json').textContent='{}';LOCAL_ANALYZER.lastResult=null;setPhotoMsg('Photo loaded locally.','ok');};reader.onerror=()=>setPhotoMsg('Could not read this image file.','err');reader.readAsDataURL(file);}
 function loadScriptOnce(src,globalName){return new Promise((resolve,reject)=>{if(globalName&&window[globalName]){resolve(window[globalName]);return;}const existing=[...document.querySelectorAll('script')].find(s=>s.src===src);if(existing){existing.addEventListener('load',()=>resolve(globalName?window[globalName]:true),{once:true});existing.addEventListener('error',()=>reject(new Error(`Failed to load ${src}`)),{once:true});return;}const s=document.createElement('script');s.src=src;s.async=true;s.onload=()=>resolve(globalName?window[globalName]:true);s.onerror=()=>reject(new Error(`Failed to load ${src}`));document.head.appendChild(s);});}
-async function ensureTfCoco(){if(LOCAL_ANALYZER.cocoModel)return LOCAL_ANALYZER.cocoModel;await loadScriptOnce('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js','tf');await loadScriptOnce('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js','cocoSsd');LOCAL_ANALYZER.cocoModel=await window.cocoSsd.load({base:'lite_mobilenet_v2'});LOCAL_ANALYZER.tfReady=true;return LOCAL_ANALYZER.cocoModel;}
+async function ensureTfCoco(){
+  if(LOCAL_ANALYZER.cocoModel)return LOCAL_ANALYZER.cocoModel;
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js','tf');
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.22.0/dist/tf-backend-webgl.min.js');
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@4.22.0/dist/tf-backend-cpu.min.js');
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js','cocoSsd');
+  if(!window.tf||!window.cocoSsd||typeof window.cocoSsd.load!=='function')throw new Error('Tensor model loader is not available.');
+  await window.tf.ready();
+  let backend='cpu';
+  try{if(await window.tf.setBackend('webgl'))backend='webgl';}catch{}
+  if(backend!=='webgl'){try{if(await window.tf.setBackend('cpu'))backend='cpu';}catch{}}
+  await window.tf.ready();
+  try{
+    LOCAL_ANALYZER.cocoModel=await window.cocoSsd.load({base:'lite_mobilenet_v2'});
+  }catch(firstErr){
+    LOCAL_ANALYZER.cocoModel=null;
+    try{
+      LOCAL_ANALYZER.cocoModel=await window.cocoSsd.load({base:'mobilenet_v2'});
+    }catch(secondErr){
+      throw new Error(`${firstErr.message}; retry failed: ${secondErr.message}`);
+    }
+  }
+  try{
+    const warm=document.createElement('canvas');warm.width=32;warm.height=32;
+    await LOCAL_ANALYZER.cocoModel.detect(warm,3,0.2);
+  }catch{}
+  LOCAL_ANALYZER.tfReady=true;
+  return LOCAL_ANALYZER.cocoModel;
+}
 async function ensureTesseract(){if(LOCAL_ANALYZER.tesseractReady&&window.Tesseract)return window.Tesseract;await loadScriptOnce('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');LOCAL_ANALYZER.tesseractReady=true;return window.Tesseract;}
 async function ensureMediapipe(){if(LOCAL_ANALYZER.mpLandmarker)return LOCAL_ANALYZER.mpLandmarker;const mp=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');LOCAL_ANALYZER.mpVision=mp;const fileset=await mp.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');LOCAL_ANALYZER.mpLandmarker=await mp.FaceLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'},runningMode:'IMAGE',numFaces:1,outputFaceBlendshapes:true});return LOCAL_ANALYZER.mpLandmarker;}
 function resizedDataUrlForOCR(img,maxSide){const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;if(!w||!h)return img.src;const scale=Math.min(1,maxSide/Math.max(w,h));const cw=Math.max(1,Math.round(w*scale));const ch=Math.max(1,Math.round(h*scale));const c=document.createElement('canvas');c.width=cw;c.height=ch;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,cw,ch);return c.toDataURL('image/jpeg',0.86);}
 function buildLocalPhotoSummary(res){const parts=[];if(res.objects&&res.objects.length){const top=res.objects.slice(0,4).map(o=>`${o.class} ${Math.round(o.score*100)}%`);parts.push(`Objects: ${top.join(', ')}.`);}if(res.faceapi){parts.push(`Face-api: mood ${res.faceapi.topExpression||'unknown'}, energy ${res.faceapi.energy??'--'}%.`);}if(res.mediapipe&&res.mediapipe.faces>0){parts.push(`MediaPipe: ${res.mediapipe.faces} face detected with landmarks.`);}if(res.ocr&&res.ocr.text){parts.push(`OCR: "${res.ocr.text.slice(0,140)}${res.ocr.text.length>140?'...':''}"`);}if(!parts.length)parts.push('No strong signal detected.');return parts.join(' ');}
-async function analyzeLocalPhoto(){const img=byId('photo-preview');if(!img||!img.src){setPhotoMsg('Select a photo first.','warn');return;}setPhotoMsg('Running smart local analysis...','info');const res={analyzedAt:new Date().toISOString(),routed:[],objects:[],faceapi:null,mediapipe:null,ocr:null,errors:[]};try{const coco=await ensureTfCoco();res.objects=await coco.detect(img,12);}catch(e){res.errors.push(`Tensor/coco failed: ${e.message}`);}const hasPerson=(res.objects||[]).some(o=>o.class==='person'&&o.score>0.42);const textHintClasses=new Set(['book','cell phone','tv','laptop','keyboard','remote','mouse']);const textHint=(res.objects||[]).some(o=>textHintClasses.has(o.class)&&o.score>0.34);const topScore=(res.objects||[])[0]?.score||0;let shouldFace=hasPerson;let shouldOcr=textHint||!hasPerson;if(topScore<0.38){const runFull=confirm('The image type is uncertain. Run full local analysis (face + text) to be safe?');if(runFull){shouldFace=true;shouldOcr=true;}}if(shouldFace){res.routed.push('face');try{const mp=await ensureMediapipe();const mpOut=mp.detect(img);const faces=mpOut?.faceLandmarks?.length||0;res.mediapipe={faces,blendshapes:mpOut?.faceBlendshapes?.[0]?.categories?.slice(0,10).map(c=>({name:c.categoryName,score:Number(c.score.toFixed(4))}))||[]};}catch(e){res.errors.push(`MediaPipe failed: ${e.message}`);}try{await loadModels();const det=await faceapi.detectSingleFace(img,new faceapi.TinyFaceDetectorOptions()).withFaceExpressions().withAgeAndGender();if(det){const exps=det.expressions;const top=Object.entries(exps).sort((a,b)=>b[1]-a[1])[0][0];const energy=Math.max(5,Math.min(99,Math.round(40+exps.happy*40+exps.surprised*20-(exps.sad+exps.fearful+exps.disgusted)*25)));res.faceapi={topExpression:top,energy,detectedAge:Math.round(det.age),estimatedGender:det.gender||null,genderProbability:det.genderProbability?Number(det.genderProbability.toFixed(3)):null,expressions:Object.fromEntries(Object.entries(exps).map(([k,v])=>[k,Math.round(v*100)]))};}}catch(e){res.errors.push(`face-api failed: ${e.message}`);}}if(shouldOcr){res.routed.push('ocr');try{const T=await ensureTesseract();const dataUrl=resizedDataUrlForOCR(img,1280);const out=await T.recognize(dataUrl,'eng');const text=(out?.data?.text||'').trim();res.ocr={chars:text.length,text,confidence:out?.data?.confidence?Number(out.data.confidence.toFixed(2)):null};}catch(e){res.errors.push(`Tesseract failed: ${e.message}`);}}if(!res.routed.length)res.routed.push('objects-only');res.summary=buildLocalPhotoSummary(res);LOCAL_ANALYZER.lastResult={...res,imageDataUrl:img.src};byId('photo-summary').textContent=res.summary;byId('photo-json').textContent=JSON.stringify(res,null,2);if(res.errors.length)setPhotoMsg(`Analysis finished with warnings (${res.errors.length}).`, 'warn');else setPhotoMsg('Analysis finished locally.', 'ok');}
+function pickPrimaryExpression(raw){const list=Object.entries(raw||{});if(!list.length)return 'neutral';list.sort((a,b)=>b[1]-a[1]);return list[0][0]||'neutral';}
+function buildAutoRouteHints(objects){const person=(objects||[]).some(o=>o.class==='person'&&o.score>0.42);const textHintClasses=new Set(['book','cell phone','tv','laptop','keyboard','remote','mouse','stop sign']);const textHint=(objects||[]).some(o=>textHintClasses.has(o.class)&&o.score>0.32);const topScore=(objects||[])[0]?.score||0;let shouldFace=person;let shouldOcr=textHint||!person;if(topScore<0.38){shouldFace=true;shouldOcr=true;}return{shouldFace,shouldOcr,topScore};}
+async function runSmartLocalPipeline(img,opts={}){
+  const options={interactivePrompt:false,...opts};
+  const res={analyzedAt:new Date().toISOString(),routed:[],objects:[],faceapi:null,mediapipe:null,ocr:null,errors:[]};
+  try{
+    const coco=await ensureTfCoco();
+    res.objects=await coco.detect(img,12,0.2);
+  }catch(e){
+    res.errors.push(`Tensor/coco failed: ${e.message}`);
+  }
+  const route=buildAutoRouteHints(res.objects||[]);
+  let shouldFace=route.shouldFace,shouldOcr=route.shouldOcr;
+  if(options.interactivePrompt&&route.topScore<0.38){
+    const runFull=confirm('The image type is uncertain. Run full local analysis (face + text) to be safe?');
+    if(runFull){shouldFace=true;shouldOcr=true;}
+  }
+  if(shouldFace){
+    res.routed.push('face');
+    try{
+      const mp=await ensureMediapipe();
+      const mpOut=mp.detect(img);
+      const faces=mpOut?.faceLandmarks?.length||0;
+      res.mediapipe={faces,blendshapes:mpOut?.faceBlendshapes?.[0]?.categories?.slice(0,10).map(c=>({name:c.categoryName,score:Number(c.score.toFixed(4))}))||[]};
+    }catch(e){
+      res.errors.push(`MediaPipe failed: ${e.message}`);
+    }
+    try{
+      await loadModels();
+      const det=await faceapi.detectSingleFace(img,new faceapi.TinyFaceDetectorOptions()).withFaceExpressions().withAgeAndGender();
+      if(det){
+        const exps=det.expressions||{};
+        const top=pickPrimaryExpression(exps);
+        const energy=Math.max(5,Math.min(99,Math.round(40+exps.happy*40+exps.surprised*20-(exps.sad+exps.fearful+exps.disgusted)*25)));
+        res.faceapi={topExpression:top,energy,detectedAge:Math.round(det.age),estimatedGender:det.gender||null,genderProbability:det.genderProbability?Number(det.genderProbability.toFixed(3)):null,expressionsRaw:Object.fromEntries(Object.entries(exps).map(([k,v])=>[k,Number(v)])),expressions:Object.fromEntries(Object.entries(exps).map(([k,v])=>[k,Math.round(v*100)]))};
+      }
+    }catch(e){
+      res.errors.push(`face-api failed: ${e.message}`);
+    }
+  }
+  if(shouldOcr){
+    res.routed.push('ocr');
+    try{
+      const T=await ensureTesseract();
+      const dataUrl=resizedDataUrlForOCR(img,1280);
+      const out=await T.recognize(dataUrl,'eng');
+      const text=(out?.data?.text||'').trim();
+      res.ocr={chars:text.length,text,confidence:out?.data?.confidence?Number(out.data.confidence.toFixed(2)):null};
+    }catch(e){
+      res.errors.push(`Tesseract failed: ${e.message}`);
+    }
+  }
+  if(!res.routed.length)res.routed.push('objects-only');
+  res.summary=buildLocalPhotoSummary(res);
+  return res;
+}
+async function analyzeLocalPhoto(){const img=byId('photo-preview');if(!img||!img.src){setPhotoMsg('Select a photo first.','warn');return;}setPhotoMsg('Running smart local analysis...','info');const res=await runSmartLocalPipeline(img,{interactivePrompt:true});LOCAL_ANALYZER.lastResult={...res,imageDataUrl:img.src};byId('photo-summary').textContent=res.summary;byId('photo-json').textContent=JSON.stringify(res,null,2);if(res.errors.length)setPhotoMsg(`Analysis finished with warnings (${res.errors.length}).`, 'warn');else setPhotoMsg('Analysis finished locally.', 'ok');}
 async function savePhotoAnalysisToDiary(){const res=LOCAL_ANALYZER.lastResult;if(!res){setPhotoMsg('Run analysis first, then save.', 'warn');return;}const nowIso=new Date().toISOString(),todayKey=dateKey(nowIso),dayList=sortedUniqueDays(),dayN=dayList.includes(todayKey)?dayList.indexOf(todayKey)+1:dayList.length+1;let photoDataUrl=shouldAutoKeepPhoto('photo_lab')?(res.imageDataUrl||null):null;const linkedPhotos=(db.entries||[]).slice().reverse().map(e=>e.photoDataUrl).filter(Boolean).slice(0,2);const faceReadings=res.faceapi||res.mediapipe?{source:'photo_lab',faceapi:res.faceapi||null,mediapipe:res.mediapipe||null}:null;db.entries.push({date:nowIso,expression:'photo_analysis',energy:res.faceapi?.energy??null,detectedAge:null,voice:'observational',feedback:null,photoDataUrl,linkedPhotos,faceReadings,resumeMode:false,reading:res.summary,analysisPayload:res});saveDB();byId('day-num').textContent=currentDayNumber();setPhotoMsg(`Saved to diary (Day ${dayN}).`,'ok');}
 function updateKeyNotice(){byId('key-notice').textContent=appConfig.serverKeyConfigured?'Server key mode is available. You can leave API key empty.':'Your key is kept in this browser session by default for privacy.';}
 async function loadServerConfig(){try{const r=await fetch('/config');if(!r.ok)return;const d=await r.json();appConfig.serverKeyConfigured=Boolean(d.serverKeyConfigured);appConfig.defaultModel=(d.defaultModel||appConfig.defaultModel).trim();}catch{}}
@@ -162,6 +246,22 @@ async function callGemini(input){
     return fallbackText(input.topExpression,input.energy,input.prev,input.voice);
   }
 }
+function buildNoFacePrompt(input){
+  const vm={direct:'Style: direct, plain, concrete.',gentle:'Style: gentle and calm while remaining honest.',poetic:'Style: poetic with strong imagery, still clear.',observational:'Style: observational, short and sharp.',dramatic:'Style: dramatic and emotionally intense, without being cringe.',humorous:'Style: dry humor, subtle wit, never goofy.',cinematic:'Style: cinematic framing, scene-like details.'};
+  const prev=input.prev?`Last entry mood: ${input.prev.expression}, energy ${input.prev.energy}%.`:'First entry ever.';
+  const trend=(db.entries?.length||0)>4?buildTrend():'';
+  const prefs=buildPreferenceHints();
+  const style=vm[input.voice]||vm.direct;
+  const visual=input.visualSummary?`Local visual summary: ${input.visualSummary}`:'Local visual summary: no strong visual signal.';
+  const flavor=pickRandom(['Ground at least one sentence in concrete scene details.','Avoid generic wording and reuse from previous entries.','Keep a clear emotional line, but avoid therapy framing.']);
+  return `You are a perceptive mirror writing a private diary entry. Be honest, specific, and human.\n\nPerson: ${input.name}, age ${input.realAge}. Day ${input.dayN}, scan ${input.scanInDay} today.\nNo clear face detected in the frame.\n${visual}\nRecent diary context: ${input.recentSummary||'none'}\n${prev} ${trend}\n${style}\n${prefs}\n${flavor}\n\nWrite exactly 2-3 sentences. No therapy tone. No questions. No emojis.`;
+}
+function fallbackNoFaceResume(input){
+  const tails={poetic:'The scene keeps echoing after the words.',dramatic:'It feels like a transition shot before the next turn.',humorous:'Even the blur has a little personality.',cinematic:'It lands like a quiet cutaway.'};
+  const prev=input.prev?`It still feels connected to your last entry (${input.prev.expression}).`:'This is your first entry, so the mirror starts from atmosphere.';
+  const visual=input.visualSummary?input.visualSummary:'No clear face this time, but the moment still carries context.';
+  return `${visual} ${prev} ${tails[input.voice]||''}`.trim();
+}
 async function callGeminiNoFace(input){
   const tempByVoice={direct:0.64,gentle:0.75,poetic:0.92,observational:0.7,dramatic:0.95,humorous:0.9,cinematic:0.9};
   const body={contents:[{parts:[{text:buildNoFacePrompt(input)}]}],generationConfig:{temperature:tempByVoice[input.voice]??0.76,maxOutputTokens:140}};
@@ -203,33 +303,40 @@ async function doScan(){
 
     const nowIso=new Date().toISOString(),todayKey=dateKey(nowIso),dayList=sortedUniqueDays(),dayN=dayList.includes(todayKey)?dayList.indexOf(todayKey)+1:dayList.length+1,scanInDay=((db.entries||[]).filter(e=>dateKey(e.date)===todayKey).length)+1;
     const prev=db.entries?.slice(-1)[0]||null,voice=pickAdaptiveVoice();
-    let det=null;
-    try{det=await faceapi.detectSingleFace(detectTarget,new faceapi.TinyFaceDetectorOptions()).withFaceExpressions().withAgeAndGender();}catch{}
+    const local=await runSmartLocalPipeline(detectTarget,{interactivePrompt:false});
+    LOCAL_ANALYZER.lastResult={...local,imageDataUrl:capturedFrame||null};
+    if(local.errors.length){setMirrorMsg(`Local analysis had ${local.errors.length} warning(s), continuing with best result.`,'warn');}
 
-    if(!det){
-      const proceed=(Boolean(prev)||scanInDay>1)?true:confirm('Face is not clear yet. Create a resume entry from recent context?');
-      if(!proceed){setMirrorMsg('No entry saved. Try better lighting and center your face.','warn');return;}
-      const recent=(db.entries||[]).slice(-3).map(e=>`${e.expression||'unknown'} @ ${e.energy||'--'}%: ${String(e.reading||'').slice(0,90)}`).join(' | ');
-      const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,prev,voice});
+    const face=local.faceapi||null;
+    byId('cam-overlay-text').textContent='writing your entry...';
+    if(face){
+      const top=face.topExpression||'neutral';
+      const detAge=Number(face.detectedAge)||null;
+      const energy=Number(face.energy)||50;
+      const exps=face.expressionsRaw&&Object.keys(face.expressionsRaw).length?face.expressionsRaw:Object.fromEntries(Object.entries(face.expressions||{}).map(([k,v])=>[k,Number(v)/100]));
+      const expSummary=face.expressions||Object.fromEntries(Object.entries(exps).map(([k,v])=>[k,Math.round(v*100)]));
+      const faceSummary=Object.entries(expSummary).map(([k,v])=>`${k}:${v}%`).join(', ');
+      const objectHints=(local.objects||[]).slice(0,4).map(o=>`${o.class} ${Math.round(o.score*100)}%`).join(', ');
+      lastFaceReadings={capturedAt:nowIso,dayN,scanInDay,topExpression:top,energy,detectedAge:detAge,estimatedGender:face.estimatedGender||null,genderProbability:face.genderProbability??null,expressions:expSummary,objects:objectHints||null,routed:local.routed||[]};
+      const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,faceSummary});
       let photoDataUrl=null;
-      if(shouldAutoKeepPhoto('no_face_resume'))photoDataUrl=capturedFrame||capturePhotoSnapshot({size:512,quality:0.84});
-      const linkedPhotos=(db.entries||[]).slice().reverse().map(e=>e.photoDataUrl).filter(Boolean).slice(0,2);
-      db.entries.push({date:nowIso,expression:'no_face',energy:typeof prev?.energy==='number'?prev.energy:null,detectedAge:null,voice,feedback:null,photoDataUrl,linkedPhotos,faceReadings:null,resumeMode:true,reading});
-      saveDB();lastEntryIndex=db.entries.length-1;showResult(reading,'no_face',null,dayN);
-      setMirrorMsg('No-face resume saved using recent context.','ok');
+      if(shouldAutoKeepPhoto('face_scan'))photoDataUrl=capturedFrame||capturePhotoSnapshot({size:512,quality:0.84});
+      db.entries.push({date:nowIso,expression:top,energy,detectedAge:detAge,voice,feedback:null,photoDataUrl,linkedPhotos:[],faceReadings:lastFaceReadings,analysisPayload:local,reading});
+      saveDB();lastEntryIndex=db.entries.length-1;showResult(reading,top,energy,dayN);setMirrorMsg('Moment captured and auto-saved. Like/Not me trains future entries.','ok');
       byId('day-num').textContent=currentDayNumber();updateFeedbackButtons();return;
     }
 
-    byId('cam-overlay-text').textContent='writing your entry...';
-    const exps=det.expressions,top=Object.entries(exps).sort((a,b)=>b[1]-a[1])[0][0],detAge=Math.round(det.age),energy=Math.max(5,Math.min(99,Math.round(40+exps.happy*40+exps.surprised*20-(exps.sad+exps.fearful+exps.disgusted)*25)));
-    const expSummary=Object.fromEntries(Object.entries(exps).map(([k,v])=>[k,Math.round(v*100)]));
-    const faceSummary=Object.entries(expSummary).map(([k,v])=>`${k}:${v}%`).join(', ');
-    lastFaceReadings={capturedAt:nowIso,dayN,scanInDay,topExpression:top,energy,detectedAge:detAge,estimatedGender:det.gender||null,genderProbability:det.genderProbability?Number(det.genderProbability.toFixed(3)):null,expressions:expSummary};
-    const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,faceSummary});
+    const recent=(db.entries||[]).slice(-3).map(e=>`${e.expression||'unknown'} @ ${e.energy||'--'}%: ${String(e.reading||'').slice(0,90)}`).join(' | ');
+    const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,visualSummary:local.summary,prev,voice});
     let photoDataUrl=null;
-    if(shouldAutoKeepPhoto('face_scan'))photoDataUrl=capturedFrame||capturePhotoSnapshot({size:512,quality:0.84});
-    db.entries.push({date:nowIso,expression:top,energy,detectedAge:detAge,voice,feedback:null,photoDataUrl,linkedPhotos:[],faceReadings:lastFaceReadings,reading});
-    saveDB();lastEntryIndex=db.entries.length-1;showResult(reading,top,energy,dayN);setMirrorMsg('Entry auto-saved. Use Like/Not me so the next ones adapt to you.','ok');
+    if(shouldAutoKeepPhoto('no_face_resume'))photoDataUrl=capturedFrame||capturePhotoSnapshot({size:512,quality:0.84});
+    const linkedPhotos=(db.entries||[]).slice().reverse().map(e=>e.photoDataUrl).filter(Boolean).slice(0,2);
+    const topObject=(local.objects||[])[0]?.class||'no_face';
+    const expression=`scene_${String(topObject).replace(/\s+/g,'_').toLowerCase()}`;
+    const faceReadings=local.mediapipe?{source:'capture',faceapi:null,mediapipe:local.mediapipe,routed:local.routed||[]}:null;
+    db.entries.push({date:nowIso,expression,energy:typeof prev?.energy==='number'?prev.energy:null,detectedAge:null,voice,feedback:null,photoDataUrl,linkedPhotos,faceReadings,resumeMode:true,analysisPayload:local,reading});
+    saveDB();lastEntryIndex=db.entries.length-1;showResult(reading,expression,null,dayN);
+    setMirrorMsg('Moment captured from scene analysis and auto-saved.','ok');
     byId('day-num').textContent=currentDayNumber();updateFeedbackButtons();
   }finally{
     byId('cam-overlay-text').textContent='reading your face...';
