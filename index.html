@@ -206,16 +206,17 @@ body.theme-night .btn-dark:hover{background:#6fb6ff;color:#0d1823;border-color:#
 <div id="cam-wrap"><video id="cam" autoplay muted playsinline></video><div id="cam-overlay"><div id="cam-overlay-text">reading your face...</div></div></div>
 <button class="btn btn-dark" id="scan-btn" style="display:none" onclick="doScan()">Capture moment</button>
 <div id="result-card"><div class="r-date" id="r-date"></div><div class="entry-text" id="r-text"></div><div class="r-stats" id="r-stats"></div><div class="feedback-buttons"><button id="like-btn" class="btn btn-sm" onclick="setEntryFeedback('like')">&#128077; Like</button><button id="dislike-btn" class="btn btn-sm" onclick="setEntryFeedback('dislike')">&#128078; Not me</button><button id="stats-btn" class="btn btn-sm" onclick="openFaceReadings()">Face stats</button></div></div>
-<div class="actions" id="mirror-actions" style="display:none"><button class="btn btn-sm" onclick="switchCamera()">Switch camera</button><button class="btn btn-sm" onclick="showScreen('s-diary');buildDiary()">My diary</button><button class="btn btn-sm" onclick="openSettings()">Settings</button></div>
+<div class="actions" id="mirror-actions" style="display:none"><button class="btn btn-sm" onclick="switchCamera()">Switch camera</button><button class="btn btn-sm" onclick="showScreen('s-diary');buildDiary()">My diary</button><button class="btn btn-sm" onclick="openDebugLogs()">Debug logs</button><button class="btn btn-sm" onclick="openSettings()">Settings</button></div>
 </div>
 <div id="s-diary" class="screen"><h1>Your diary</h1><p class="sub" id="diary-sub"></p><div id="diary-wrap" style="width:100%"></div><div class="actions"><button class="btn btn-sm" onclick="exportDiary()">Export JSON</button><button class="btn btn-sm" onclick="triggerImport()">Import JSON</button><button class="btn btn-sm" onclick="showScreen('s-mirror')">Back</button></div><input id="import-file" type="file" accept="application/json" onchange="importDiary(event)" style="display:none"/></div>
-<div id="s-settings" class="screen"><h1>Settings</h1><div class="field"><label>Your name</label><input id="set-name"/></div><div class="field"><label>Your age</label><input id="set-age" type="number" min="5" max="120"/></div><div class="field"><label>Diary PIN (blank to remove)</label><input id="set-pin" type="password"/></div><div class="field"><label>Gemini API key</label><input id="set-key" type="password" placeholder="leave blank to keep current"/></div><div class="field"><label>Photo saving</label><select id="set-photo-mode"><option value="ask">Ask every capture</option><option value="always">Always save</option><option value="never">Never save</option></select></div><div class="field"><label>Theme</label><select id="set-theme"><option value="warm">Warm</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="night">Night</option></select></div><div class="actions"><button class="btn btn-sm" onclick="showScreen('s-mirror')">Cancel</button><button class="btn btn-dark" onclick="saveSettings()">Save</button><button class="btn btn-sm" onclick="lockNow()">Lock now</button><button class="btn btn-sm" style="color:#c0392b;border-color:#f5c6c6" onclick="clearAll()">Clear all data</button></div></div>
+<div id="s-settings" class="screen"><h1>Settings</h1><div class="field"><label>Your name</label><input id="set-name"/></div><div class="field"><label>Your age</label><input id="set-age" type="number" min="5" max="120"/></div><div class="field"><label>Diary PIN (blank to remove)</label><input id="set-pin" type="password"/></div><div class="field"><label>Gemini API key</label><input id="set-key" type="password" placeholder="leave blank to keep current"/></div><div class="field"><label>Photo saving</label><select id="set-photo-mode"><option value="ask">Ask every capture</option><option value="always">Always save</option><option value="never">Never save</option></select></div><div class="field"><label>Debug mode</label><select id="set-debug-mode"><option value="off">Off</option><option value="on">On (log model input/output)</option></select></div><div class="field"><label>Theme</label><select id="set-theme"><option value="warm">Warm</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="night">Night</option></select></div><div class="actions"><button class="btn btn-sm" onclick="showScreen('s-mirror')">Cancel</button><button class="btn btn-dark" onclick="saveSettings()">Save</button><button class="btn btn-sm" onclick="lockNow()">Lock now</button><button class="btn btn-sm" style="color:#c0392b;border-color:#f5c6c6" onclick="clearAll()">Clear all data</button></div></div>
 </div>
 <div id="stats-modal" class="modal-backdrop" onclick="closeFaceReadings(event)"><div class="modal-card" onclick="event.stopPropagation()"><h1 style="font-size:20px;text-align:left;margin-bottom:.6rem">Face-API Readings</h1><pre id="stats-json" class="stats-json">{}</pre><div class="actions" style="justify-content:flex-end"><button class="btn btn-sm" onclick="closeFaceReadings()">Close</button></div></div></div>
 <div id="photo-save-modal" class="modal-backdrop" onclick="closePhotoSavePrompt(event)"><div class="modal-card" onclick="event.stopPropagation()"><h1 style="font-size:20px;text-align:left;margin-bottom:.6rem">Save photo?</h1><p id="photo-save-text" class="sub" style="text-align:left;max-width:none;margin-bottom:.7rem">Save this photo with the diary entry?</p><div class="field" style="margin-bottom:.6rem"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input id="photo-save-remember" type="checkbox" style="width:auto"/> Use this choice for next captures</label></div><div class="actions" style="justify-content:flex-end"><button class="btn btn-sm" onclick="confirmPhotoSave(false)">Don't save</button><button class="btn btn-dark btn-sm" onclick="confirmPhotoSave(true)">Save photo</button></div></div></div>
+<div id="debug-modal" class="modal-backdrop" onclick="closeDebugLogs(event)"><div class="modal-card" onclick="event.stopPropagation()"><h1 style="font-size:20px;text-align:left;margin-bottom:.6rem">Debug logs</h1><pre id="debug-json" class="stats-json">[]</pre><div class="actions" style="justify-content:flex-end"><button class="btn btn-sm" onclick="copyDebugLogs()">Copy</button><button class="btn btn-sm" onclick="exportDebugLogs()">Export</button><button class="btn btn-sm" onclick="clearDebugLogs()">Clear</button><button class="btn btn-sm" onclick="closeDebugLogs()">Close</button></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-const MODEL_URL='/weights',DB_KEY='mm2',SESSION_API_KEY='mm2_session_api_key',SESSION_UNLOCK='mm2_unlocked';
+const MODEL_URL='/weights',DB_KEY='mm2',SESSION_API_KEY='mm2_session_api_key',SESSION_UNLOCK='mm2_unlocked',DEBUG_MAX_LOGS=180;
 let db={},modelsReady=false,mirrorInitInProgress=false,lastEntryIndex=-1,lastFaceReadings=null,activeStream=null,scanBusy=false,photoPromptResolver=null,appConfig={serverKeyConfigured:false,defaultModel:'gemini-2.0-flash'};
 const VOICES=['direct','gentle','poetic','observational','dramatic','humorous','cinematic'];
 const VOICE_INTENSITY={direct:38,gentle:30,poetic:62,observational:45,dramatic:84,humorous:70,cinematic:66};
@@ -224,7 +225,7 @@ const LOCAL_ANALYZER={tfReady:false,cocoModel:null,tesseractReady:false,mpVision
 const byId=(id)=>document.getElementById(id);
 const showScreen=(id)=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));byId(id).classList.add('active');};
 function loadDB(){const r=localStorage.getItem(DB_KEY);if(!r)return{};try{return JSON.parse(r)||{}}catch{return{}}}
-function normalizeDB(raw){const o={...(raw||{})};o.name=(o.name||'').trim();o.age=Number(o.age)||'';o.entries=Array.isArray(o.entries)?o.entries:[];o.entries=o.entries.map(e=>({...e,feedback:e.feedback==='like'||e.feedback==='dislike'?e.feedback:null,voice:e.voice&&VOICES.includes(e.voice)?e.voice:null,photoDataUrl:typeof e.photoDataUrl==='string'?e.photoDataUrl:null,linkedPhotos:Array.isArray(e.linkedPhotos)?e.linkedPhotos.filter(p=>typeof p==='string').slice(0,3):[]}));o.keyMode='session';o.geminiModel=(o.geminiModel||appConfig.defaultModel).trim();o.pin=o.pin?String(o.pin):'';o.theme=['warm','ocean','forest','night'].includes(o.theme)?o.theme:'warm';o.photoMode=['ask','always','never'].includes(o.photoMode)?o.photoMode:(o.photoMode==='auto'?'ask':'ask');o.cameraFacing=['user','environment'].includes(o.cameraFacing)?o.cameraFacing:'user';o.profileMemory=o.profileMemory&&typeof o.profileMemory==='object'?o.profileMemory:null;delete o.tone;return o;}
+function normalizeDB(raw){const o={...(raw||{})};o.name=(o.name||'').trim();o.age=Number(o.age)||'';o.entries=Array.isArray(o.entries)?o.entries:[];o.entries=o.entries.map(e=>({...e,feedback:e.feedback==='like'||e.feedback==='dislike'?e.feedback:null,voice:e.voice&&VOICES.includes(e.voice)?e.voice:null,photoDataUrl:typeof e.photoDataUrl==='string'?e.photoDataUrl:null,linkedPhotos:Array.isArray(e.linkedPhotos)?e.linkedPhotos.filter(p=>typeof p==='string').slice(0,3):[]}));o.keyMode='session';o.geminiModel=(o.geminiModel||appConfig.defaultModel).trim();o.pin=o.pin?String(o.pin):'';o.theme=['warm','ocean','forest','night'].includes(o.theme)?o.theme:'warm';o.photoMode=['ask','always','never'].includes(o.photoMode)?o.photoMode:(o.photoMode==='auto'?'ask':'ask');o.cameraFacing=['user','environment'].includes(o.cameraFacing)?o.cameraFacing:'user';o.profileMemory=o.profileMemory&&typeof o.profileMemory==='object'?o.profileMemory:null;o.debugMode=Boolean(o.debugMode);o.debugLogs=Array.isArray(o.debugLogs)?o.debugLogs.slice(-DEBUG_MAX_LOGS):[];delete o.tone;return o;}
 function saveDB(){const o={...db};if(o.keyMode!=='local')delete o.apiKey;localStorage.setItem(DB_KEY,JSON.stringify(o));}
 function getApiKey(){return (sessionStorage.getItem(SESSION_API_KEY)||db.apiKey||'').trim();}
 function setApiKey(v){const key=(v||'').trim();sessionStorage.removeItem(SESSION_API_KEY);delete db.apiKey;if(!key)return;sessionStorage.setItem(SESSION_API_KEY,key);}
@@ -232,6 +233,34 @@ const hasProfile=()=>Boolean(db.name&&db.age);const setUnlocked=(v)=>v?sessionSt
 function setMirrorMsg(text,type){const el=byId('mirror-msg');if(!text){el.className='msg';el.textContent='';return;}el.className=`msg ${type||'info'}`;el.textContent=text;}
 function setCamStatus(text,loading){const el=byId('cam-status');el.textContent=text;el.style.display='block';el.classList.toggle('loading-dot',Boolean(loading));}
 function sanitize(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function isDebugEnabled(){return Boolean(db.debugMode);}
+function shortenText(text,maxLen=1800){const s=String(text||'');if(s.length<=maxLen)return s;return`${s.slice(0,maxLen)}...[truncated ${s.length-maxLen} chars]`;}
+function pruneForLog(value,depth=0){
+  if(value===null||value===undefined)return value;
+  if(typeof value==='string')return shortenText(value,depth===0?2800:1200);
+  if(typeof value==='number'||typeof value==='boolean')return value;
+  if(Array.isArray(value)){
+    const max=depth===0?40:12;
+    const arr=value.slice(0,max).map(v=>pruneForLog(v,depth+1));
+    if(value.length>max)arr.push(`[+${value.length-max} more items]`);
+    return arr;
+  }
+  if(typeof value==='object'){
+    const out={};
+    const keys=Object.keys(value);
+    const max=depth===0?40:20;
+    keys.slice(0,max).forEach(k=>{out[k]=pruneForLog(value[k],depth+1);});
+    if(keys.length>max)out.__more=`+${keys.length-max} keys`;
+    return out;
+  }
+  return String(value);
+}
+function appendDebugLog(type,data){
+  if(!isDebugEnabled())return;
+  const entry={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,ts:new Date().toISOString(),type,data:pruneForLog(data||{})};
+  db.debugLogs=[...(db.debugLogs||[]),entry].slice(-DEBUG_MAX_LOGS);
+  saveDB();
+}
 function applyTheme(theme){document.body.classList.remove('theme-ocean','theme-forest','theme-night');if(theme==='ocean')document.body.classList.add('theme-ocean');else if(theme==='forest')document.body.classList.add('theme-forest');else if(theme==='night')document.body.classList.add('theme-night');}
 function dateKey(d){const dt=new Date(d);if(Number.isNaN(dt.getTime()))return '';return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
 function sortedUniqueDays(){const days=[...new Set((db.entries||[]).map(e=>dateKey(e.date)).filter(Boolean))];days.sort();return days;}
@@ -345,7 +374,7 @@ async function runSmartLocalPipeline(img,opts={}){
 function updateKeyNotice(){byId('key-notice').textContent=appConfig.serverKeyConfigured?'Server key mode is available. You can leave API key empty.':'Your key is kept in this browser session by default for privacy.';}
 async function loadServerConfig(){try{const r=await fetch('/config');if(!r.ok)return;const d=await r.json();appConfig.serverKeyConfigured=Boolean(d.serverKeyConfigured);appConfig.defaultModel=(d.defaultModel||appConfig.defaultModel).trim();}catch{}}
 function routeFromState(){if(!hasProfile()){showScreen('s-setup');return;}if(db.pin&&!isUnlocked()){showScreen('s-lock');return;}const hasKey=Boolean(getApiKey())||appConfig.serverKeyConfigured;if(hasKey)initMirror();else showScreen('s-key');}
-function goToKey(){const name=byId('inp-name').value.trim(),age=Number(byId('inp-age').value),pin=byId('inp-pin').value.trim();if(!name||!age||age<5||age>120){alert('Please enter a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}db.name=name;db.age=age;db.pin=pin||'';db.entries=db.entries||[];db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=db.theme||'warm';db.photoMode=db.photoMode||'ask';db.cameraFacing=db.cameraFacing||'user';saveDB();setUnlocked(true);updateKeyNotice();showScreen('s-key');}
+function goToKey(){const name=byId('inp-name').value.trim(),age=Number(byId('inp-age').value),pin=byId('inp-pin').value.trim();if(!name||!age||age<5||age>120){alert('Please enter a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}db.name=name;db.age=age;db.pin=pin||'';db.entries=db.entries||[];db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=db.theme||'warm';db.photoMode=db.photoMode||'ask';db.cameraFacing=db.cameraFacing||'user';db.debugMode=Boolean(db.debugMode);db.debugLogs=Array.isArray(db.debugLogs)?db.debugLogs:[];saveDB();setUnlocked(true);updateKeyNotice();showScreen('s-key');}
 function unlockPin(){const pin=byId('lock-pin').value.trim();if(!db.pin){setUnlocked(true);routeFromState();return;}if(pin!==db.pin){alert('Incorrect PIN.');return;}setUnlocked(true);byId('lock-pin').value='';routeFromState();}
 function saveKey(){const key=byId('inp-key').value.trim();if(key&&key.length<20){alert('That key looks too short.');return;}if(!key&&!appConfig.serverKeyConfigured){alert('Please provide an API key, or configure GEMINI_API_KEY on server.');return;}db.keyMode='session';db.geminiModel=db.geminiModel||appConfig.defaultModel;db.entries=db.entries||[];setApiKey(key||getApiKey());saveDB();initMirror();}
 const greetingForNow=(name)=>{const h=new Date().getHours();if(h<12)return`Good morning, ${name}`;if(h<18)return`Good afternoon, ${name}`;return`Good evening, ${name}`;};
@@ -489,26 +518,64 @@ function inferActionCue(objects,sceneSummary){
   if(scene.includes('around you:'))return pickFreshCandidate(['The setting is doing part of the storytelling today.','Your environment is loud enough to become part of the caption.','The room adds context to your mood, and it shows.']);
   return pickFreshCandidate(['This feels like a quick life-update selfie moment.','You caught a real in-between moment, not a posed one.','This frame looks candid, alive, and very now.']);
 }
+function normalizeObjectLabel(raw){
+  const label=String(raw||'').toLowerCase().trim();
+  const map={
+    'cell phone':'phone',
+    'tv':'screen',
+    'dining table':'table',
+    'potted plant':'plant',
+    'wine glass':'glass',
+    'teddy bear':'bear',
+    'sports ball':'ball',
+    'remote':'remote',
+  };
+  return map[label]||label;
+}
 function buildVisualAnchors(objects,sceneSummary){
-  const labels=(objects||[]).slice(0,6).map(o=>String(o.class||'').toLowerCase().trim()).filter(Boolean);
-  const normalized=[];
-  labels.forEach(label=>{
-    normalized.push(label);
-    if(label==='cell phone')normalized.push('phone');
-    if(label==='tv')normalized.push('screen');
-  });
+  const strong=(objects||[]).filter(o=>Number(o.score)>=0.23).slice(0,6);
+  const normalized=[...new Set(strong.map(o=>normalizeObjectLabel(o.class)).filter(Boolean))];
   const scene=String(sceneSummary||'').toLowerCase();
-  if(scene.includes('around you:'))normalized.push('around you');
-  if(scene.includes('expression'))normalized.push('expression');
+  if(scene.includes('around you:'))normalized.push('room');
   if(scene.includes('words in frame'))normalized.push('words');
-  const base=['light','frame','background'];
-  const anchors=[...new Set([...normalized,...base])].filter(Boolean).slice(0,8);
-  return anchors.length?anchors:base;
+  const anchors=[...new Set(normalized)].filter(Boolean).slice(0,8);
+  return anchors.length?anchors:['room','scene'];
+}
+function buildRequiredAnchors(objects){
+  const required=[...new Set((objects||[]).filter(o=>Number(o.score)>=0.3).slice(0,3).map(o=>normalizeObjectLabel(o.class)).filter(Boolean))];
+  return required.slice(0,2);
+}
+function buildObjectFactsForPrompt(objects){
+  const top=(objects||[]).filter(o=>Number(o.score)>=0.2).slice(0,5);
+  if(!top.length)return 'No strong objects detected.';
+  return top.map(o=>`${normalizeObjectLabel(o.class)} ${Math.round(Number(o.score||0)*100)}%`).join(', ');
 }
 function textMentionsAnchors(text,anchors){
   const t=String(text||'').toLowerCase();
   const list=Array.isArray(anchors)?anchors:[];
-  return list.some(a=>String(a||'').trim()&&t.includes(String(a).toLowerCase()));
+  return list.some(a=>{
+    const anchor=String(a||'').toLowerCase().trim();
+    if(!anchor)return false;
+    if(t.includes(anchor))return true;
+    if(anchor.endsWith('s')&&t.includes(anchor.slice(0,-1)))return true;
+    if(!anchor.endsWith('s')&&t.includes(`${anchor}s`))return true;
+    return false;
+  });
+}
+function buildAnchorPhrase(anchors){
+  const list=(anchors||[]).filter(Boolean).slice(0,2);
+  if(!list.length)return 'the room around you';
+  if(list.length===1)return list[0];
+  return `${list[0]} and ${list[1]}`;
+}
+function hasTechnicalLeak(text){
+  return /\b(tensor|mediapipe|face-api|pipeline|model|ocr|confidence|probability)\b/i.test(String(text||''));
+}
+function isCaptionGrounded(text,input){
+  const anchors=(input?.requiredAnchors&&input.requiredAnchors.length?input.requiredAnchors:input?.visualAnchors||[]).filter(Boolean);
+  const hasAnchor=anchors.length?textMentionsAnchors(text,anchors):true;
+  const noTech=!hasTechnicalLeak(text);
+  return hasAnchor&&noTech;
 }
 function getProfilePreferences(context={}){
   const memory=db.profileMemory&&typeof db.profileMemory==='object'?db.profileMemory:refreshProfileMemory();
@@ -550,8 +617,7 @@ function fallbackText(top,energy,prev,voice,sceneSummary,actionCue,visualAnchors
   };
   const scene=buildSceneHint(sceneSummary);
   const action=String(actionCue||'').trim();
-  const anchor=(visualAnchors||[]).find(Boolean);
-  const anchorLine=anchor?`Photo cue: ${anchor}.`:'';
+  const anchorLine=`Photo cue: ${buildAnchorPhrase(visualAnchors)}.`;
   return `${pickFreshCandidate(openers[top]||openers.neutral)} ${action} ${anchorLine} ${shift} ${scene} ${vibeTail[voice]||vibeTail.direct}`.replace(/\s+/g,' ').trim();
 }
 function voiceScore(voice,context={}){
@@ -609,6 +675,9 @@ function buildPrompt(input){
   const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid selfie check-in moment.';
   const anchors=(input.visualAnchors||[]).filter(Boolean).slice(0,8);
   const anchorsLine=`Visual anchors from the photo: ${anchors.join(', ')}.`;
+  const required=(input.requiredAnchors||[]).filter(Boolean).slice(0,3);
+  const requiredLine=required.length?`Required anchors (must include at least one): ${required.join(', ')}.`:'Required anchors: use any visual anchor naturally.';
+  const objectsLine=`Detected objects: ${input.objectFacts||'No strong objects detected.'}`;
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
 Person: ${input.name}, age ${input.realAge}. Day ${input.dayN}, scan ${input.scanInDay} today.
@@ -617,6 +686,8 @@ Face signal details: ${input.faceSummary}
 ${scene}
 ${actionLine}
 ${anchorsLine}
+${requiredLine}
+${objectsLine}
 ${prev} ${trend}
 ${style}
 Memory hints (local-only): ${pref.text}
@@ -625,13 +696,15 @@ Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 
 Write exactly 2-4 sentences in selfie-caption style.
 Sentence 1: mood hook. Sentence 2: what the person is doing right now. Final sentence: motivating line that feels confident and warm.
-You MUST mention at least one visual anchor from the list.
+You MUST mention at least one required anchor if provided.
+If no required anchor is provided, mention at least one visual anchor from the list.
 Optional: at most one short hashtag at the very end.
 No therapy script. No mention of model names, percentages, or technical pipelines.`;
 }
-async function generateGeminiText(prompt,voice,maxTokens){
+async function generateGeminiText(prompt,voice,maxTokens,meta={}){
   const tempByVoice={direct:0.7,gentle:0.82,poetic:0.98,observational:0.76,dramatic:1.0,humorous:0.95,cinematic:0.96};
   const jitter=(Math.random()*0.08)-0.04;
+  const modelName=db.geminiModel||appConfig.defaultModel;
   const body={
     contents:[{parts:[{text:prompt}]}],
     generationConfig:{
@@ -640,28 +713,35 @@ async function generateGeminiText(prompt,voice,maxTokens){
       maxOutputTokens:maxTokens,
     },
   };
-  const res=await fetch('/gemini',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:getApiKey(),model:db.geminiModel||appConfig.defaultModel,body})});
+  appendDebugLog('gemini_request',{channel:meta.channel||'unknown',attempt:Number(meta.attempt)||0,voice,model:modelName,prompt,generationConfig:body.generationConfig});
+  const res=await fetch('/gemini',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:getApiKey(),model:modelName,body})});
   const data=await res.json().catch(()=>({}));
-  if(!res.ok){throw new Error(data?.error?.message||`Gemini request failed (${res.status})`);}
+  if(!res.ok){appendDebugLog('gemini_error',{channel:meta.channel||'unknown',attempt:Number(meta.attempt)||0,status:res.status,error:data?.error?.message||'Gemini request failed'});throw new Error(data?.error?.message||`Gemini request failed (${res.status})`);}
   const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if(!text)throw new Error('Gemini returned no text.');
+  appendDebugLog('gemini_response',{channel:meta.channel||'unknown',attempt:Number(meta.attempt)||0,status:res.status,candidateCount:Array.isArray(data?.candidates)?data.candidates.length:null,text});
   return text.trim();
 }
 async function callGemini(input){
   try{
-    const anchors=(input.visualAnchors||[]).filter(Boolean);
-    let text=await generateGeminiText(buildPrompt(input),input.voice,220);
+    const anchors=(input.requiredAnchors&&input.requiredAnchors.length?input.requiredAnchors:input.visualAnchors||[]).filter(Boolean);
+    let attempt=0;
+    let text=await generateGeminiText(buildPrompt(input),input.voice,220,{channel:'face',attempt});
     let tries=0;
-    while((tooSimilarToRecent(text)||startsLikeRecent(text)||(anchors.length&&!textMentionsAnchors(text,anchors)))&&tries<4){
+    while((tooSimilarToRecent(text)||startsLikeRecent(text)||!isCaptionGrounded(text,input))&&tries<5){
       const anchorNudge=anchors.length?`Also ensure the text explicitly mentions at least one of these anchors: ${anchors.join(', ')}.`:'';
-      const nudge=`${buildPrompt(input)}\nPrevious draft is still too close to recent entries or missed photo details. Rewrite with a completely different opener, clearer action line, and stronger caption energy. ${anchorNudge}`;
-      text=await generateGeminiText(nudge,input.voice,235);
+      const nudge=`${buildPrompt(input)}\nPrevious draft is still too close to recent entries or missed photo details. Rewrite with a completely different opener, clearer action line, and stronger caption energy. Keep the comment grounded to what is visibly in the image. ${anchorNudge}`;
+      attempt+=1;
+      text=await generateGeminiText(nudge,input.voice,235,{channel:'face',attempt});
       tries+=1;
     }
+    appendDebugLog('comment_selected',{channel:'face',voice:input.voice,text,mood:input.topExpression,energy:input.energy,anchors,grounded:isCaptionGrounded(text,input)});
     return text;
   }catch{
     setMirrorMsg('Writing service was slow, so this entry used local style fallback.','info');
-    return fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary,input.actionCue,input.visualAnchors);
+    const fallback=fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary,input.actionCue,input.visualAnchors);
+    appendDebugLog('comment_fallback',{channel:'face',voice:input.voice,text:fallback,mood:input.topExpression,energy:input.energy,anchors:input.visualAnchors||[]});
+    return fallback;
   }
 }
 function buildNoFacePrompt(input){
@@ -676,6 +756,9 @@ function buildNoFacePrompt(input){
   const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid scene-based check-in.';
   const anchors=(input.visualAnchors||[]).filter(Boolean).slice(0,8);
   const anchorsLine=`Visual anchors from the photo: ${anchors.join(', ')}.`;
+  const required=(input.requiredAnchors||[]).filter(Boolean).slice(0,3);
+  const requiredLine=required.length?`Required anchors (must include at least one): ${required.join(', ')}.`:'Required anchors: use any visual anchor naturally.';
+  const objectsLine=`Detected objects: ${input.objectFacts||'No strong objects detected.'}`;
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
 Person: ${input.name}, age ${input.realAge}. Day ${input.dayN}, scan ${input.scanInDay} today.
@@ -683,6 +766,8 @@ No clear face was detected this time.
 ${visual}
 ${actionLine}
 ${anchorsLine}
+${requiredLine}
+${objectsLine}
 Recent diary context: ${input.recentSummary||'none'}
 ${prev} ${trend}
 ${style}
@@ -692,7 +777,8 @@ Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 
 Write exactly 2-4 sentences in selfie-caption style.
 Sentence 1: mood hook from scene. Sentence 2: what the person seems to be doing right now. Final sentence: motivating line that feels confident and warm.
-You MUST mention at least one visual anchor from the list.
+You MUST mention at least one required anchor if provided.
+If no required anchor is provided, mention at least one visual anchor from the list.
 Optional: at most one short hashtag at the very end.
 No therapy script. No mention of model names or technical pipelines.`;
 }
@@ -703,8 +789,7 @@ function fallbackNoFaceResume(input){
     'Even without a face lock, this capture carries mood.'
   ]);
   const action=String(input.actionCue||'').trim();
-  const anchor=(input.visualAnchors||[]).find(Boolean);
-  const anchorLine=anchor?`Photo cue: ${anchor}.`:'';
+  const anchorLine=`Photo cue: ${buildAnchorPhrase(input.visualAnchors)}.`;
   const scene=buildSceneHint(input.visualSummary);
   const bridge=input.prev?pickFreshCandidate([`It still feels connected to your last entry (${input.prev.expression}).`,`It follows the emotional thread of your previous note (${input.prev.expression}).`]):pickFreshCandidate(['This is a clean start, and atmosphere leads the first line.','First note in this run, so the room sets the tone.']);
   const tail={poetic:'Caption this: you are still becoming, even in quiet frames.',dramatic:'Episode note: this is tension, not the ending.',humorous:'This post says: chaotic maybe, iconic definitely.',cinematic:'Freeze-frame it, then step into the next scene.'};
@@ -712,23 +797,28 @@ function fallbackNoFaceResume(input){
 }
 async function callGeminiNoFace(input){
   try{
-    const anchors=(input.visualAnchors||[]).filter(Boolean);
-    let text=await generateGeminiText(buildNoFacePrompt(input),input.voice,220);
+    const anchors=(input.requiredAnchors&&input.requiredAnchors.length?input.requiredAnchors:input.visualAnchors||[]).filter(Boolean);
+    let attempt=0;
+    let text=await generateGeminiText(buildNoFacePrompt(input),input.voice,220,{channel:'no_face',attempt});
     let tries=0;
-    while((tooSimilarToRecent(text)||startsLikeRecent(text)||(anchors.length&&!textMentionsAnchors(text,anchors)))&&tries<4){
+    while((tooSimilarToRecent(text)||startsLikeRecent(text)||!isCaptionGrounded(text,input))&&tries<5){
       const anchorNudge=anchors.length?`Also ensure the text explicitly mentions at least one of these anchors: ${anchors.join(', ')}.`:'';
-      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft is still too close to recent entries or missed photo details. Rewrite with a different opening, clearer action line, and stronger caption energy. ${anchorNudge}`;
-      text=await generateGeminiText(nudge,input.voice,235);
+      const nudge=`${buildNoFacePrompt(input)}\nPrevious draft is still too close to recent entries or missed photo details. Rewrite with a different opening, clearer action line, and stronger caption energy. Keep the comment grounded to what is visibly in the image. ${anchorNudge}`;
+      attempt+=1;
+      text=await generateGeminiText(nudge,input.voice,235,{channel:'no_face',attempt});
       tries+=1;
     }
+    appendDebugLog('comment_selected',{channel:'no_face',voice:input.voice,text,anchors,grounded:isCaptionGrounded(text,input)});
     return text;
   }catch{
     setMirrorMsg('Writing service was slow, so this entry used local scene fallback.','info');
-    return fallbackNoFaceResume(input);
+    const fallback=fallbackNoFaceResume(input);
+    appendDebugLog('comment_fallback',{channel:'no_face',voice:input.voice,text:fallback,anchors:input.visualAnchors||[]});
+    return fallback;
   }
 }
 function updateFeedbackButtons(){const e=(db.entries||[])[lastEntryIndex];const like=byId('like-btn'),dislike=byId('dislike-btn');if(!e){like.style.borderColor='#ddd';dislike.style.borderColor='#ddd';return;}like.style.borderColor=e.feedback==='like'?'#6fbf7d':'#ddd';dislike.style.borderColor=e.feedback==='dislike'?'#d48585':'#ddd';}
-function setEntryFeedback(type,targetIndex){const idx=Number.isInteger(targetIndex)?targetIndex:lastEntryIndex;const e=(db.entries||[])[idx];if(!e){setMirrorMsg('Scan first to rate an entry.','warn');return;}e.feedback=e.feedback===type?null:type;refreshProfileMemory();saveDB();if(idx===lastEntryIndex)updateFeedbackButtons();buildDiary();setMirrorMsg(e.feedback?`Saved feedback: ${e.feedback}. Future entries will adapt.`:'Feedback cleared for this entry.','ok');}
+function setEntryFeedback(type,targetIndex){const idx=Number.isInteger(targetIndex)?targetIndex:lastEntryIndex;const e=(db.entries||[])[idx];if(!e){setMirrorMsg('Scan first to rate an entry.','warn');return;}e.feedback=e.feedback===type?null:type;appendDebugLog('entry_feedback',{index:idx,feedback:e.feedback||null,expression:e.expression||null,voice:e.voice||null});refreshProfileMemory();saveDB();if(idx===lastEntryIndex)updateFeedbackButtons();buildDiary();setMirrorMsg(e.feedback?`Saved feedback: ${e.feedback}. Future entries will adapt.`:'Feedback cleared for this entry.','ok');}
 function setDiaryEntryFeedback(index,type){setEntryFeedback(type,index);}
 function deleteDiaryEntry(index){const e=(db.entries||[])[index];if(!e)return;const when=new Date(e.date).toLocaleString('en-GB');if(!confirm(`Delete this diary entry from ${when}? This cannot be undone.`))return;db.entries.splice(index,1);if(lastEntryIndex===index){lastEntryIndex=-1;byId('result-card').classList.remove('show');}else if(lastEntryIndex>index){lastEntryIndex-=1;}refreshProfileMemory();saveDB();byId('day-num').textContent=currentDayNumber();buildDiary();updateFeedbackButtons();setMirrorMsg('Entry deleted.','ok');}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -750,6 +840,7 @@ function confirmPhotoSave(shouldSave){
     db.photoMode=shouldSave?'always':'never';
     saveDB();
   }
+  appendDebugLog('photo_save_choice',{shouldSave:Boolean(shouldSave),remember,nextMode:db.photoMode||'ask'});
   const modal=byId('photo-save-modal');
   modal.classList.remove('show');
   if(photoPromptResolver){
@@ -767,9 +858,10 @@ function askToSavePhoto(mode){
   return new Promise(resolve=>{photoPromptResolver=resolve;});
 }
 async function decidePhotoDataUrl(mode,capturedFrame){
-  if(db.photoMode==='always')return capturedFrame||capturePhotoSnapshot({size:512,quality:0.84});
-  if(db.photoMode==='never')return null;
+  if(db.photoMode==='always'){appendDebugLog('photo_save_policy',{mode,policy:'always',saved:true});return capturedFrame||capturePhotoSnapshot({size:512,quality:0.84});}
+  if(db.photoMode==='never'){appendDebugLog('photo_save_policy',{mode,policy:'never',saved:false});return null;}
   const keep=await askToSavePhoto(mode);
+  appendDebugLog('photo_save_policy',{mode,policy:'ask',saved:Boolean(keep)});
   if(!keep)return null;
   return capturedFrame||capturePhotoSnapshot({size:512,quality:0.84});
 }
@@ -796,6 +888,7 @@ async function doScan(){
     const nowIso=new Date().toISOString(),todayKey=dateKey(nowIso),dayList=sortedUniqueDays(),dayN=dayList.includes(todayKey)?dayList.indexOf(todayKey)+1:dayList.length+1,scanInDay=((db.entries||[]).filter(e=>dateKey(e.date)===todayKey).length)+1;
     const nowHour=new Date(nowIso).getHours();
     const prev=db.entries?.slice(-1)[0]||null;
+    appendDebugLog('scan_start',{capturedAt:nowIso,dayN,scanInDay,cameraFacing:db.cameraFacing||'user',photoMode:db.photoMode||'ask'});
     byId('cam-overlay-text').textContent='analyzing moment...';
     const local=await withTimeout(
       runSmartLocalPipeline(detectTarget,{source:'capture',enableOcr:false,stepTimeoutMs:7000}),
@@ -813,10 +906,13 @@ async function doScan(){
     }));
     LOCAL_ANALYZER.lastResult={...local,imageDataUrl:capturedFrame||null};
     if(local.errors.length){setMirrorMsg('Capture completed with a light fallback path.','info');}
+    appendDebugLog('local_pipeline',{routed:local.routed||[],summary:local.summary||'',errors:local.errors||[],objects:(local.objects||[]).slice(0,6),faceapi:local.faceapi||null,mediapipe:local.mediapipe||null,ocr:local.ocr||null});
 
     const face=local.faceapi||null;
     const actionCue=inferActionCue(local.objects||[],local.summary);
     const visualAnchors=buildVisualAnchors(local.objects||[],local.summary);
+    const requiredAnchors=buildRequiredAnchors(local.objects||[]);
+    const objectFacts=buildObjectFactsForPrompt(local.objects||[]);
     byId('cam-overlay-text').textContent='writing your entry...';
     if(face){
       const top=face.topExpression||'neutral';
@@ -829,10 +925,11 @@ async function doScan(){
       const faceSummary=Object.entries(expSummary).map(([k,v])=>`${k}:${v}%`).join(', ');
       const objectHints=(local.objects||[]).slice(0,4).map(o=>`${o.class} ${Math.round(o.score*100)}%`).join(', ');
       lastFaceReadings={capturedAt:nowIso,dayN,scanInDay,topExpression:top,energy,detectedAge:detAge,estimatedGender:face.estimatedGender||null,genderProbability:face.genderProbability??null,expressions:expSummary,objects:objectHints||null,routed:local.routed||[]};
-      const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,moodCluster,hour:nowHour,faceSummary,sceneSummary:local.summary,actionCue,visualAnchors});
+      const reading=await callGemini({topExpression:top,expressions:exps,energy,detectedAge:detAge,realAge:db.age,dayN,scanInDay,prev,name:db.name,voice,moodCluster,hour:nowHour,faceSummary,sceneSummary:local.summary,actionCue,visualAnchors,requiredAnchors,objectFacts});
       const photoDataUrl=await decidePhotoDataUrl('face_scan',capturedFrame);
       db.entries.push({date:nowIso,expression:top,energy,detectedAge:detAge,voice,feedback:null,photoDataUrl,linkedPhotos:[],faceReadings:lastFaceReadings,analysisPayload:local,reading});
       refreshProfileMemory();
+      appendDebugLog('scan_saved',{channel:'face',expression:top,energy,voice,savedPhoto:Boolean(photoDataUrl),entryPreview:String(reading||'').slice(0,280)});
       saveDB();lastEntryIndex=db.entries.length-1;showResult(reading,top,energy,dayN);setMirrorMsg('Moment captured and saved. Like/Not me helps future tone adapt.','ok');
       byId('day-num').textContent=currentDayNumber();updateFeedbackButtons();return;
     }
@@ -840,7 +937,7 @@ async function doScan(){
     const moodCluster=getMoodCluster(prev?.expression,prev?.energy);
     const voice=pickAdaptiveVoice({hour:nowHour,moodCluster});
     const recent=(db.entries||[]).slice(-3).map(e=>`${e.expression||'unknown'} @ ${e.energy||'--'}%: ${String(e.reading||'').slice(0,90)}`).join(' | ');
-    const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,visualSummary:local.summary,prev,voice,moodCluster,hour:nowHour,actionCue,visualAnchors});
+    const reading=await callGeminiNoFace({name:db.name,realAge:db.age,dayN,scanInDay,recentSummary:recent,visualSummary:local.summary,prev,voice,moodCluster,hour:nowHour,actionCue,visualAnchors,requiredAnchors,objectFacts});
     const photoDataUrl=await decidePhotoDataUrl('no_face_resume',capturedFrame);
     const linkedPhotos=(db.entries||[]).slice().reverse().map(e=>e.photoDataUrl).filter(Boolean).slice(0,2);
     const topObject=(local.objects||[])[0]?.class||'no_face';
@@ -848,6 +945,7 @@ async function doScan(){
     const faceReadings=local.mediapipe?{source:'capture',faceapi:null,mediapipe:local.mediapipe,routed:local.routed||[]}:null;
     db.entries.push({date:nowIso,expression,energy:typeof prev?.energy==='number'?prev.energy:null,detectedAge:null,voice,feedback:null,photoDataUrl,linkedPhotos,faceReadings,resumeMode:true,analysisPayload:local,reading});
     refreshProfileMemory();
+    appendDebugLog('scan_saved',{channel:'no_face',expression,energy:typeof prev?.energy==='number'?prev.energy:null,voice,savedPhoto:Boolean(photoDataUrl),entryPreview:String(reading||'').slice(0,280)});
     saveDB();lastEntryIndex=db.entries.length-1;showResult(reading,expression,null,dayN);
     setMirrorMsg('Moment captured and saved from scene cues.','ok');
     byId('day-num').textContent=currentDayNumber();updateFeedbackButtons();
@@ -865,13 +963,19 @@ function buildDiary(){const entries=(db.entries||[]).map((e,index)=>({e,index}))
 function openFaceReadings(){if(!lastFaceReadings){setMirrorMsg('No face readings yet. Scan once first.','warn');return;}byId('stats-json').textContent=JSON.stringify(lastFaceReadings,null,2);byId('stats-modal').classList.add('show');}
 function openEntryFaceReadings(index){const e=(db.entries||[])[index];if(!e){setMirrorMsg('Entry not found.','warn');return;}const payload=e.faceReadings||e.analysisPayload||null;if(!payload){setMirrorMsg('No technical readings stored for that entry.','warn');return;}byId('stats-json').textContent=JSON.stringify(payload,null,2);byId('stats-modal').classList.add('show');}
 function closeFaceReadings(evt){if(evt&&evt.target&&evt.target.id!=='stats-modal')return;byId('stats-modal').classList.remove('show');}
+function renderDebugLogsText(){const logs=db.debugLogs||[];const payload={debugMode:Boolean(db.debugMode),total:logs.length,logs};byId('debug-json').textContent=JSON.stringify(payload,null,2);}
+function openDebugLogs(){renderDebugLogsText();byId('debug-modal').classList.add('show');}
+function closeDebugLogs(evt){if(evt&&evt.target&&evt.target.id!=='debug-modal')return;byId('debug-modal').classList.remove('show');}
+async function copyDebugLogs(){const text=byId('debug-json').textContent||'{}';try{await navigator.clipboard.writeText(text);setMirrorMsg('Debug logs copied to clipboard.','ok');}catch{setMirrorMsg('Clipboard copy failed. Use Export instead.','warn');}}
+function exportDebugLogs(){const payload={exportedAt:new Date().toISOString(),profile:{name:db.name||'',age:db.age||null},debugMode:Boolean(db.debugMode),logs:db.debugLogs||[]};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`mirror-debug-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+function clearDebugLogs(){if(!confirm('Clear all debug logs?'))return;db.debugLogs=[];saveDB();renderDebugLogsText();setMirrorMsg('Debug logs cleared.','ok');}
 function exportDiary(){const payload={exportedAt:new Date().toISOString(),profile:{name:db.name,age:db.age},entries:db.entries||[]};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`mirror-diary-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
 function triggerImport(){byId('import-file').click();}
 async function importDiary(event){const file=event.target.files&&event.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());const list=Array.isArray(parsed.entries)?parsed.entries:[];const valid=list.filter(e=>e&&e.date&&e.reading&&e.expression).map(e=>({...e,feedback:e.feedback==='like'||e.feedback==='dislike'?e.feedback:null,voice:e.voice&&VOICES.includes(e.voice)?e.voice:pickAdaptiveVoice(),photoDataUrl:typeof e.photoDataUrl==='string'?e.photoDataUrl:null,linkedPhotos:Array.isArray(e.linkedPhotos)?e.linkedPhotos.filter(p=>typeof p==='string').slice(0,3):[],resumeMode:Boolean(e.resumeMode)}));if(!valid.length){alert('No valid entries found in file.');return;}db.entries=[...(db.entries||[]),...valid].sort((a,b)=>new Date(a.date)-new Date(b.date));refreshProfileMemory();saveDB();buildDiary();setMirrorMsg('Import completed.','ok');}catch{alert('Import failed. Use a valid JSON export file.');}finally{byId('import-file').value='';}}
-function openSettings(){byId('set-name').value=db.name||'';byId('set-age').value=db.age||'';byId('set-pin').value=db.pin||'';byId('set-key').value='';byId('set-photo-mode').value=['ask','always','never'].includes(db.photoMode)?db.photoMode:'ask';byId('set-theme').value=db.theme||'warm';showScreen('s-settings');}
-async function saveSettings(){const name=byId('set-name').value.trim(),age=Number(byId('set-age').value),pin=byId('set-pin').value.trim(),typedKey=byId('set-key').value.trim(),photoMode=byId('set-photo-mode').value,theme=byId('set-theme').value;if(!name||!age||age<5||age>120){alert('Please provide a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}if(typedKey&&typedKey.length<20){alert('That key looks too short.');return;}db.name=name;db.age=age;db.pin=pin||'';db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=['warm','ocean','forest','night'].includes(theme)?theme:'warm';db.photoMode=['ask','always','never'].includes(photoMode)?photoMode:'ask';db.cameraFacing=db.cameraFacing||'user';const resolved=typedKey||getApiKey();if(!resolved&&!appConfig.serverKeyConfigured){alert('No API key set. Add one, or configure GEMINI_API_KEY on server.');return;}setApiKey(resolved);saveDB();applyTheme(db.theme);initMirror();}
+function openSettings(){byId('set-name').value=db.name||'';byId('set-age').value=db.age||'';byId('set-pin').value=db.pin||'';byId('set-key').value='';byId('set-photo-mode').value=['ask','always','never'].includes(db.photoMode)?db.photoMode:'ask';byId('set-debug-mode').value=db.debugMode?'on':'off';byId('set-theme').value=db.theme||'warm';showScreen('s-settings');}
+async function saveSettings(){const name=byId('set-name').value.trim(),age=Number(byId('set-age').value),pin=byId('set-pin').value.trim(),typedKey=byId('set-key').value.trim(),photoMode=byId('set-photo-mode').value,debugMode=byId('set-debug-mode').value,theme=byId('set-theme').value;if(!name||!age||age<5||age>120){alert('Please provide a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}if(typedKey&&typedKey.length<20){alert('That key looks too short.');return;}db.name=name;db.age=age;db.pin=pin||'';db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=['warm','ocean','forest','night'].includes(theme)?theme:'warm';db.photoMode=['ask','always','never'].includes(photoMode)?photoMode:'ask';db.debugMode=debugMode==='on';db.debugLogs=Array.isArray(db.debugLogs)?db.debugLogs:[];db.cameraFacing=db.cameraFacing||'user';const resolved=typedKey||getApiKey();if(!resolved&&!appConfig.serverKeyConfigured){alert('No API key set. Add one, or configure GEMINI_API_KEY on server.');return;}setApiKey(resolved);saveDB();applyTheme(db.theme);setMirrorMsg(db.debugMode?'Debug mode is ON: model logs will be stored locally.':'','info');initMirror();}
 function lockNow(){if(!db.pin){alert('Set a PIN first in settings.');return;}setUnlocked(false);showScreen('s-lock');}
-function clearAll(){if(!confirm('Delete all local profile data and diary entries? This cannot be undone.'))return;if(activeStream){activeStream.getTracks().forEach(t=>t.stop());activeStream=null;}localStorage.removeItem(DB_KEY);sessionStorage.removeItem(SESSION_API_KEY);sessionStorage.removeItem(SESSION_UNLOCK);db={theme:'warm',photoMode:'ask',cameraFacing:'user',profileMemory:null};lastEntryIndex=-1;lastFaceReadings=null;LOCAL_ANALYZER.lastResult=null;closeFaceReadings();closePhotoSavePrompt();applyTheme('warm');showScreen('s-setup');}
+function clearAll(){if(!confirm('Delete all local profile data and diary entries? This cannot be undone.'))return;if(activeStream){activeStream.getTracks().forEach(t=>t.stop());activeStream=null;}localStorage.removeItem(DB_KEY);sessionStorage.removeItem(SESSION_API_KEY);sessionStorage.removeItem(SESSION_UNLOCK);db={theme:'warm',photoMode:'ask',cameraFacing:'user',profileMemory:null,debugMode:false,debugLogs:[]};lastEntryIndex=-1;lastFaceReadings=null;LOCAL_ANALYZER.lastResult=null;closeFaceReadings();closePhotoSavePrompt();closeDebugLogs();applyTheme('warm');showScreen('s-setup');}
 window.addEventListener('load',async()=>{await loadServerConfig();db=normalizeDB(loadDB());refreshProfileMemory();applyTheme(db.theme||'warm');lastFaceReadings=(db.entries&&db.entries.length)?(db.entries[db.entries.length-1].faceReadings||null):null;byId('inp-name').value=db.name||'';byId('inp-age').value=db.age||'';byId('inp-pin').value=db.pin||'';updateKeyNotice();routeFromState();});
 </script>
 </body>
