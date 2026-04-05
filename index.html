@@ -59,6 +59,26 @@ body.theme-night{
   --accent:#8ec6ff;
   --ring:rgba(142,198,255,.3);
 }
+body.theme-azure{
+  --bg:radial-gradient(circle at 10% 14%,#d7eeff 0,#eaf6ff 42%,#f5fbff 100%);
+  --card:#ffffff;
+  --text:#0f2637;
+  --muted:#4f6e86;
+  --line:#c9dff0;
+  --soft:#edf7ff;
+  --accent:#099cff;
+  --ring:rgba(9,156,255,.28);
+}
+body.theme-custom{
+  --bg:radial-gradient(circle at 10% 14%,#d7eeff 0,#eaf6ff 42%,#f5fbff 100%);
+  --card:#ffffff;
+  --text:#0f2637;
+  --muted:#4f6e86;
+  --line:#c9dff0;
+  --soft:#edf7ff;
+  --accent:#099cff;
+  --ring:rgba(9,156,255,.28);
+}
 .app{
   width:100%;
   max-width:460px;
@@ -114,6 +134,7 @@ h1{
 .btn-dark{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn-dark:hover{background:#111}
 body.theme-night .btn-dark:hover{background:#6fb6ff;color:#0d1823;border-color:#6fb6ff}
+body.theme-azure .btn-dark:hover,body.theme-custom .btn-dark:hover{background:#007bd1;border-color:#007bd1;color:#fff}
 .btn-sm{padding:7px 12px;font-size:12px}
 #cam-wrap{
   position:relative;
@@ -206,10 +227,10 @@ body.theme-night .btn-dark:hover{background:#6fb6ff;color:#0d1823;border-color:#
 <div id="cam-wrap"><video id="cam" autoplay muted playsinline></video><div id="cam-overlay"><div id="cam-overlay-text">reading your face...</div></div></div>
 <button class="btn btn-dark" id="scan-btn" style="display:none" onclick="doScan()">Capture moment</button>
 <div id="result-card"><div class="r-date" id="r-date"></div><div class="entry-text" id="r-text"></div><div class="r-stats" id="r-stats"></div><div class="feedback-buttons"><button id="like-btn" class="btn btn-sm" onclick="setEntryFeedback('like')">&#128077; Like</button><button id="dislike-btn" class="btn btn-sm" onclick="setEntryFeedback('dislike')">&#128078; Not me</button><button id="stats-btn" class="btn btn-sm" onclick="openFaceReadings()">Face stats</button></div></div>
-<div class="actions" id="mirror-actions" style="display:none"><button class="btn btn-sm" onclick="switchCamera()">Switch camera</button><button class="btn btn-sm" onclick="showScreen('s-diary');buildDiary()">My diary</button><button class="btn btn-sm" onclick="openDebugLogs()">Debug logs</button><button class="btn btn-sm" onclick="openSettings()">Settings</button></div>
+<div class="actions" id="mirror-actions" style="display:none"><button class="btn btn-sm" onclick="switchCamera()">Switch camera</button><button class="btn btn-sm" onclick="showScreen('s-diary');buildDiary()">My diary</button><button class="btn btn-sm" onclick="tensorSelfTest()">Tensor self-test</button><button class="btn btn-sm" onclick="openDebugLogs()">Debug logs</button><button class="btn btn-sm" onclick="openSettings()">Settings</button></div>
 </div>
 <div id="s-diary" class="screen"><h1>Your diary</h1><p class="sub" id="diary-sub"></p><div id="diary-wrap" style="width:100%"></div><div class="actions"><button class="btn btn-sm" onclick="exportDiary()">Export JSON</button><button class="btn btn-sm" onclick="triggerImport()">Import JSON</button><button class="btn btn-sm" onclick="showScreen('s-mirror')">Back</button></div><input id="import-file" type="file" accept="application/json" onchange="importDiary(event)" style="display:none"/></div>
-<div id="s-settings" class="screen"><h1>Settings</h1><div class="field"><label>Your name</label><input id="set-name"/></div><div class="field"><label>Your age</label><input id="set-age" type="number" min="5" max="120"/></div><div class="field"><label>Diary PIN (blank to remove)</label><input id="set-pin" type="password"/></div><div class="field"><label>Gemini API key</label><input id="set-key" type="password" placeholder="leave blank to keep current"/></div><div class="field"><label>Photo saving</label><select id="set-photo-mode"><option value="ask">Ask every capture</option><option value="always">Always save</option><option value="never">Never save</option></select></div><div class="field"><label>Debug mode</label><select id="set-debug-mode"><option value="off">Off</option><option value="on">On (log model input/output)</option></select></div><div class="field"><label>Theme</label><select id="set-theme"><option value="warm">Warm</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="night">Night</option></select></div><div class="actions"><button class="btn btn-sm" onclick="showScreen('s-mirror')">Cancel</button><button class="btn btn-dark" onclick="saveSettings()">Save</button><button class="btn btn-sm" onclick="lockNow()">Lock now</button><button class="btn btn-sm" style="color:#c0392b;border-color:#f5c6c6" onclick="clearAll()">Clear all data</button></div></div>
+<div id="s-settings" class="screen"><h1>Settings</h1><div class="field"><label>Your name</label><input id="set-name"/></div><div class="field"><label>Your age</label><input id="set-age" type="number" min="5" max="120"/></div><div class="field"><label>Diary PIN (blank to remove)</label><input id="set-pin" type="password"/></div><div class="field"><label>Gemini API key</label><input id="set-key" type="password" placeholder="leave blank to keep current"/></div><div class="field"><label>Photo saving</label><select id="set-photo-mode"><option value="ask">Ask every capture</option><option value="always">Always save</option><option value="never">Never save</option></select></div><div class="field"><label>Debug mode</label><select id="set-debug-mode"><option value="off">Off</option><option value="on">On (log model input/output)</option></select></div><div class="field"><label>Theme</label><select id="set-theme" onchange="updateThemeColorField()"><option value="warm">Warm</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="night">Night</option><option value="azure">Azure 09</option><option value="custom">Personal color</option></select></div><div class="field" id="custom-color-row" style="display:none"><label>Personal color</label><input id="set-custom-color" type="color" value="#099cff"/><div class="notice" style="text-align:left;max-width:none;margin-top:.35rem">Use any color; we generate a matching soft theme.</div></div><div class="actions"><button class="btn btn-sm" onclick="showScreen('s-mirror')">Cancel</button><button class="btn btn-dark" onclick="saveSettings()">Save</button><button class="btn btn-sm" onclick="lockNow()">Lock now</button><button class="btn btn-sm" style="color:#c0392b;border-color:#f5c6c6" onclick="clearAll()">Clear all data</button></div></div>
 </div>
 <div id="stats-modal" class="modal-backdrop" onclick="closeFaceReadings(event)"><div class="modal-card" onclick="event.stopPropagation()"><h1 style="font-size:20px;text-align:left;margin-bottom:.6rem">Face-API Readings</h1><pre id="stats-json" class="stats-json">{}</pre><div class="actions" style="justify-content:flex-end"><button class="btn btn-sm" onclick="closeFaceReadings()">Close</button></div></div></div>
 <div id="photo-save-modal" class="modal-backdrop" onclick="closePhotoSavePrompt(event)"><div class="modal-card" onclick="event.stopPropagation()"><h1 style="font-size:20px;text-align:left;margin-bottom:.6rem">Save photo?</h1><p id="photo-save-text" class="sub" style="text-align:left;max-width:none;margin-bottom:.7rem">Save this photo with the diary entry?</p><div class="field" style="margin-bottom:.6rem"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input id="photo-save-remember" type="checkbox" style="width:auto"/> Use this choice for next captures</label></div><div class="actions" style="justify-content:flex-end"><button class="btn btn-sm" onclick="confirmPhotoSave(false)">Don't save</button><button class="btn btn-dark btn-sm" onclick="confirmPhotoSave(true)">Save photo</button></div></div></div>
@@ -221,11 +242,11 @@ let db={},modelsReady=false,mirrorInitInProgress=false,lastEntryIndex=-1,lastFac
 const VOICES=['direct','gentle','poetic','observational','dramatic','humorous','cinematic'];
 const VOICE_INTENSITY={direct:38,gentle:30,poetic:62,observational:45,dramatic:84,humorous:70,cinematic:66};
 const MOOD_CLUSTERS=['bright','calm','heavy','intense','reflective'];
-const LOCAL_ANALYZER={tfReady:false,cocoModel:null,tesseractReady:false,mpVision:null,mpLandmarker:null,lastResult:null};
+const LOCAL_ANALYZER={tfReady:false,tfWarmupStarted:false,tfLastError:null,tfLastReadyAt:null,cocoModel:null,tesseractReady:false,mpVision:null,mpLandmarker:null,lastResult:null};
 const byId=(id)=>document.getElementById(id);
 const showScreen=(id)=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));byId(id).classList.add('active');};
 function loadDB(){const r=localStorage.getItem(DB_KEY);if(!r)return{};try{return JSON.parse(r)||{}}catch{return{}}}
-function normalizeDB(raw){const o={...(raw||{})};o.name=(o.name||'').trim();o.age=Number(o.age)||'';o.entries=Array.isArray(o.entries)?o.entries:[];o.entries=o.entries.map(e=>({...e,feedback:e.feedback==='like'||e.feedback==='dislike'?e.feedback:null,voice:e.voice&&VOICES.includes(e.voice)?e.voice:null,photoDataUrl:typeof e.photoDataUrl==='string'?e.photoDataUrl:null,linkedPhotos:Array.isArray(e.linkedPhotos)?e.linkedPhotos.filter(p=>typeof p==='string').slice(0,3):[]}));o.keyMode='session';o.geminiModel=(o.geminiModel||appConfig.defaultModel).trim();o.pin=o.pin?String(o.pin):'';o.theme=['warm','ocean','forest','night'].includes(o.theme)?o.theme:'warm';o.photoMode=['ask','always','never'].includes(o.photoMode)?o.photoMode:(o.photoMode==='auto'?'ask':'ask');o.cameraFacing=['user','environment'].includes(o.cameraFacing)?o.cameraFacing:'user';o.profileMemory=o.profileMemory&&typeof o.profileMemory==='object'?o.profileMemory:null;o.debugMode=Boolean(o.debugMode);o.debugLogs=Array.isArray(o.debugLogs)?o.debugLogs.slice(-DEBUG_MAX_LOGS):[];delete o.tone;return o;}
+function normalizeDB(raw){const o={...(raw||{})};o.name=(o.name||'').trim();o.age=Number(o.age)||'';o.entries=Array.isArray(o.entries)?o.entries:[];o.entries=o.entries.map(e=>({...e,feedback:e.feedback==='like'||e.feedback==='dislike'?e.feedback:null,voice:e.voice&&VOICES.includes(e.voice)?e.voice:null,photoDataUrl:typeof e.photoDataUrl==='string'?e.photoDataUrl:null,linkedPhotos:Array.isArray(e.linkedPhotos)?e.linkedPhotos.filter(p=>typeof p==='string').slice(0,3):[]}));o.keyMode='session';o.geminiModel=(o.geminiModel||appConfig.defaultModel).trim();o.pin=o.pin?String(o.pin):'';o.theme=['warm','ocean','forest','night','azure','custom'].includes(o.theme)?o.theme:'warm';o.customColor=/^#[0-9a-f]{6}$/i.test(String(o.customColor||''))?String(o.customColor).toLowerCase():'#099cff';o.photoMode=['ask','always','never'].includes(o.photoMode)?o.photoMode:(o.photoMode==='auto'?'ask':'ask');o.cameraFacing=['user','environment'].includes(o.cameraFacing)?o.cameraFacing:'user';o.profileMemory=o.profileMemory&&typeof o.profileMemory==='object'?o.profileMemory:null;o.debugMode=Boolean(o.debugMode);o.debugLogs=Array.isArray(o.debugLogs)?o.debugLogs.slice(-DEBUG_MAX_LOGS):[];delete o.tone;return o;}
 function saveDB(){const o={...db};if(o.keyMode!=='local')delete o.apiKey;localStorage.setItem(DB_KEY,JSON.stringify(o));}
 function getApiKey(){return (sessionStorage.getItem(SESSION_API_KEY)||db.apiKey||'').trim();}
 function setApiKey(v){const key=(v||'').trim();sessionStorage.removeItem(SESSION_API_KEY);delete db.apiKey;if(!key)return;sessionStorage.setItem(SESSION_API_KEY,key);}
@@ -261,7 +282,34 @@ function appendDebugLog(type,data){
   db.debugLogs=[...(db.debugLogs||[]),entry].slice(-DEBUG_MAX_LOGS);
   saveDB();
 }
-function applyTheme(theme){document.body.classList.remove('theme-ocean','theme-forest','theme-night');if(theme==='ocean')document.body.classList.add('theme-ocean');else if(theme==='forest')document.body.classList.add('theme-forest');else if(theme==='night')document.body.classList.add('theme-night');}
+function clamp01(v){return Math.max(0,Math.min(1,Number(v)));}
+function hexToRgb(hex){const m=/^#?([0-9a-f]{6})$/i.exec(String(hex||''));if(!m)return null;const int=parseInt(m[1],16);return{r:(int>>16)&255,g:(int>>8)&255,b:int&255};}
+function mixHex(a,b,t){const c1=hexToRgb(a),c2=hexToRgb(b);if(!c1||!c2)return a;const k=clamp01(t);const r=Math.round(c1.r+(c2.r-c1.r)*k),g=Math.round(c1.g+(c2.g-c1.g)*k),bl=Math.round(c1.b+(c2.b-c1.b)*k);return`#${[r,g,bl].map(v=>v.toString(16).padStart(2,'0')).join('')}`;}
+function rgbaFromHex(hex,a){const c=hexToRgb(hex);if(!c)return`rgba(9,156,255,${a})`;return`rgba(${c.r},${c.g},${c.b},${a})`;}
+function clearInlineThemeVars(){['--bg','--card','--text','--muted','--line','--soft','--accent','--ring'].forEach(v=>document.body.style.removeProperty(v));}
+function applyPersonalTheme(color){
+  const accent=/^#[0-9a-f]{6}$/i.test(String(color||''))?String(color).toLowerCase():'#099cff';
+  const bgA=mixHex(accent,'#ffffff',0.84);
+  const bgB=mixHex(accent,'#ffffff',0.93);
+  const bgC=mixHex(accent,'#ffffff',0.97);
+  document.body.style.setProperty('--bg',`radial-gradient(circle at 10% 14%,${bgA} 0,${bgB} 42%,${bgC} 100%)`);
+  document.body.style.setProperty('--card','#ffffff');
+  document.body.style.setProperty('--text',mixHex(accent,'#0b1f2d',0.85));
+  document.body.style.setProperty('--muted',mixHex(accent,'#6e7f8f',0.68));
+  document.body.style.setProperty('--line',mixHex(accent,'#dbe9f3',0.6));
+  document.body.style.setProperty('--soft',mixHex(accent,'#f3f9ff',0.74));
+  document.body.style.setProperty('--accent',accent);
+  document.body.style.setProperty('--ring',rgbaFromHex(accent,0.28));
+}
+function applyTheme(theme){
+  document.body.classList.remove('theme-ocean','theme-forest','theme-night','theme-azure','theme-custom');
+  clearInlineThemeVars();
+  if(theme==='ocean')document.body.classList.add('theme-ocean');
+  else if(theme==='forest')document.body.classList.add('theme-forest');
+  else if(theme==='night')document.body.classList.add('theme-night');
+  else if(theme==='azure')document.body.classList.add('theme-azure');
+  else if(theme==='custom'){document.body.classList.add('theme-custom');applyPersonalTheme(db.customColor||'#099cff');}
+}
 function dateKey(d){const dt=new Date(d);if(Number.isNaN(dt.getTime()))return '';return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
 function sortedUniqueDays(){const days=[...new Set((db.entries||[]).map(e=>dateKey(e.date)).filter(Boolean))];days.sort();return days;}
 function currentDayNumber(){const today=dateKey(new Date().toISOString());const days=sortedUniqueDays();if(!today)return days.length||1;const idx=days.indexOf(today);return idx>=0?idx+1:days.length+1;}
@@ -293,7 +341,22 @@ async function ensureTfCoco(){
     await LOCAL_ANALYZER.cocoModel.detect(warm,3,0.2);
   }catch{}
   LOCAL_ANALYZER.tfReady=true;
+  LOCAL_ANALYZER.tfLastError=null;
+  LOCAL_ANALYZER.tfLastReadyAt=new Date().toISOString();
   return LOCAL_ANALYZER.cocoModel;
+}
+function warmupObjectDetector(){
+  if(LOCAL_ANALYZER.tfWarmupStarted||LOCAL_ANALYZER.tfReady)return;
+  LOCAL_ANALYZER.tfWarmupStarted=true;
+  appendDebugLog('tensor_warmup_start',{startedAt:new Date().toISOString()});
+  ensureTfCoco().then(()=>{
+    appendDebugLog('tensor_warmup_ready',{readyAt:LOCAL_ANALYZER.tfLastReadyAt||new Date().toISOString()});
+  }).catch((e)=>{
+    LOCAL_ANALYZER.tfLastError=String(e?.message||'unknown');
+    appendDebugLog('tensor_warmup_error',{error:LOCAL_ANALYZER.tfLastError});
+  }).finally(()=>{
+    LOCAL_ANALYZER.tfWarmupStarted=false;
+  });
 }
 async function ensureTesseract(){if(LOCAL_ANALYZER.tesseractReady&&window.Tesseract)return window.Tesseract;await loadScriptOnce('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');LOCAL_ANALYZER.tesseractReady=true;return window.Tesseract;}
 async function ensureMediapipe(){if(LOCAL_ANALYZER.mpLandmarker)return LOCAL_ANALYZER.mpLandmarker;const mp=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');LOCAL_ANALYZER.mpVision=mp;const fileset=await mp.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');LOCAL_ANALYZER.mpLandmarker=await mp.FaceLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'},runningMode:'IMAGE',numFaces:1,outputFaceBlendshapes:true});return LOCAL_ANALYZER.mpLandmarker;}
@@ -323,10 +386,13 @@ function withTimeout(promise,ms,label){let timeoutId=null;const timeoutPromise=n
 async function runSmartLocalPipeline(img,opts={}){
   const options={source:'capture',enableOcr:null,stepTimeoutMs:9000,...opts};
   const res={analyzedAt:new Date().toISOString(),routed:[],objects:[],faceapi:null,mediapipe:null,ocr:null,errors:[]};
+  const tensorLoadTimeout=Number(options.tensorLoadTimeoutMs)||Math.max(options.stepTimeoutMs,LOCAL_ANALYZER.tfReady?9000:22000);
+  const tensorDetectTimeout=Number(options.tensorDetectTimeoutMs)||Math.max(Math.round(options.stepTimeoutMs*0.9),LOCAL_ANALYZER.tfReady?6500:10000);
   try{
-    const coco=await withTimeout(ensureTfCoco(),options.stepTimeoutMs,'Tensor model load');
-    res.objects=await withTimeout(coco.detect(img,12,0.2),options.stepTimeoutMs,'Tensor object detection');
+    const coco=await withTimeout(ensureTfCoco(),tensorLoadTimeout,'Tensor model load');
+    res.objects=await withTimeout(coco.detect(img,10,0.2),tensorDetectTimeout,'Tensor object detection');
   }catch(e){
+    LOCAL_ANALYZER.tfLastError=String(e?.message||'unknown');
     res.errors.push(`Tensor/coco failed: ${e.message}`);
   }
   const route=buildAutoRouteHints(res.objects||[]);
@@ -374,14 +440,38 @@ async function runSmartLocalPipeline(img,opts={}){
 function updateKeyNotice(){byId('key-notice').textContent=appConfig.serverKeyConfigured?'Server key mode is available. You can leave API key empty.':'Your key is kept in this browser session by default for privacy.';}
 async function loadServerConfig(){try{const r=await fetch('/config');if(!r.ok)return;const d=await r.json();appConfig.serverKeyConfigured=Boolean(d.serverKeyConfigured);appConfig.defaultModel=(d.defaultModel||appConfig.defaultModel).trim();}catch{}}
 function routeFromState(){if(!hasProfile()){showScreen('s-setup');return;}if(db.pin&&!isUnlocked()){showScreen('s-lock');return;}const hasKey=Boolean(getApiKey())||appConfig.serverKeyConfigured;if(hasKey)initMirror();else showScreen('s-key');}
-function goToKey(){const name=byId('inp-name').value.trim(),age=Number(byId('inp-age').value),pin=byId('inp-pin').value.trim();if(!name||!age||age<5||age>120){alert('Please enter a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}db.name=name;db.age=age;db.pin=pin||'';db.entries=db.entries||[];db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=db.theme||'warm';db.photoMode=db.photoMode||'ask';db.cameraFacing=db.cameraFacing||'user';db.debugMode=Boolean(db.debugMode);db.debugLogs=Array.isArray(db.debugLogs)?db.debugLogs:[];saveDB();setUnlocked(true);updateKeyNotice();showScreen('s-key');}
+function goToKey(){const name=byId('inp-name').value.trim(),age=Number(byId('inp-age').value),pin=byId('inp-pin').value.trim();if(!name||!age||age<5||age>120){alert('Please enter a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}db.name=name;db.age=age;db.pin=pin||'';db.entries=db.entries||[];db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=db.theme||'warm';db.customColor=/^#[0-9a-f]{6}$/i.test(String(db.customColor||''))?String(db.customColor).toLowerCase():'#099cff';db.photoMode=db.photoMode||'ask';db.cameraFacing=db.cameraFacing||'user';db.debugMode=Boolean(db.debugMode);db.debugLogs=Array.isArray(db.debugLogs)?db.debugLogs:[];saveDB();setUnlocked(true);updateKeyNotice();showScreen('s-key');}
 function unlockPin(){const pin=byId('lock-pin').value.trim();if(!db.pin){setUnlocked(true);routeFromState();return;}if(pin!==db.pin){alert('Incorrect PIN.');return;}setUnlocked(true);byId('lock-pin').value='';routeFromState();}
 function saveKey(){const key=byId('inp-key').value.trim();if(key&&key.length<20){alert('That key looks too short.');return;}if(!key&&!appConfig.serverKeyConfigured){alert('Please provide an API key, or configure GEMINI_API_KEY on server.');return;}db.keyMode='session';db.geminiModel=db.geminiModel||appConfig.defaultModel;db.entries=db.entries||[];setApiKey(key||getApiKey());saveDB();initMirror();}
 const greetingForNow=(name)=>{const h=new Date().getHours();if(h<12)return`Good morning, ${name}`;if(h<18)return`Good afternoon, ${name}`;return`Good evening, ${name}`;};
-async function initMirror(){if(mirrorInitInProgress)return;mirrorInitInProgress=true;showScreen('s-mirror');applyTheme(db.theme||'warm');byId('greeting').textContent=greetingForNow(db.name||'friend');byId('day-num').textContent=currentDayNumber();byId('result-card').classList.remove('show');byId('mirror-actions').style.display='flex';lastEntryIndex=-1;setMirrorMsg('','info');try{await startCam();loadModels().catch(()=>{});}finally{mirrorInitInProgress=false;}}
+async function initMirror(){if(mirrorInitInProgress)return;mirrorInitInProgress=true;showScreen('s-mirror');applyTheme(db.theme||'warm');byId('greeting').textContent=greetingForNow(db.name||'friend');byId('day-num').textContent=currentDayNumber();byId('result-card').classList.remove('show');byId('mirror-actions').style.display='flex';lastEntryIndex=-1;setMirrorMsg('','info');try{await startCam();loadModels().catch(()=>{});warmupObjectDetector();}finally{mirrorInitInProgress=false;}}
 async function loadModels(){if(modelsReady){setCamStatus('Face analysis ready',false);return;}setCamStatus('Checking model files',true);try{const sres=await fetch('/weights/status');if(sres.ok){const s=await sres.json();if(Array.isArray(s.missing)&&s.missing.length){setCamStatus(`Downloading ${s.missing.length} model files (first run only)`,true);const p=await fetch('/weights/prefetch',{method:'POST'});if(!p.ok)setMirrorMsg('Model prefetch had issues. Continuing.', 'warn');}}}catch{setMirrorMsg('Could not pre-check model files. Continuing...','warn');}setCamStatus('Loading face analysis models',true);try{await Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL)]);modelsReady=true;setCamStatus('Face analysis ready',false);}catch{setCamStatus('Could not load face models. Check internet and retry.',false);setMirrorMsg('Model loading failed. Retry in a few seconds.','err');throw new Error('Model load failed');}}
 async function startCam(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setCamStatus('Camera API not supported.',false);setMirrorMsg('Use a recent browser.','err');return;}try{if(activeStream){activeStream.getTracks().forEach(t=>t.stop());activeStream=null;}const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:db.cameraFacing||'user'},audio:false});activeStream=stream;const v=byId('cam');v.srcObject=stream;await new Promise(r=>{v.onloadedmetadata=r});byId('cam-wrap').style.display='block';byId('scan-btn').style.display='inline-block';byId('cam-status').style.display='none';setMirrorMsg(`Camera ready (${db.cameraFacing==='environment'?'back':'front'}). Tap "Capture moment" when centered.`,'ok');}catch{setCamStatus('Camera access denied or unavailable.',false);setMirrorMsg('Allow camera permission and refresh.','err');}}
 async function switchCamera(){db.cameraFacing=db.cameraFacing==='environment'?'user':'environment';saveDB();setCamStatus('Switching camera',true);await startCam();}
+async function tensorSelfTest(){
+  if(scanBusy){setMirrorMsg('Wait for current capture to finish before running Tensor self-test.','info');return;}
+  if(!activeStream){setMirrorMsg('Camera is not ready yet.','warn');return;}
+  setMirrorMsg('Running Tensor self-test...','info');
+  appendDebugLog('tensor_self_test_start',{startedAt:new Date().toISOString()});
+  try{
+    const snap=capturePhotoSnapshot({size:448,quality:0.84});
+    let target=byId('cam');
+    if(snap){try{target=await loadImageFromDataUrl(snap);}catch{}}
+    const t0=Date.now();
+    const coco=await withTimeout(ensureTfCoco(),30000,'Tensor self-test load');
+    const objects=await withTimeout(coco.detect(target,10,0.2),12000,'Tensor self-test detect');
+    const elapsed=Date.now()-t0;
+    const top=(objects||[]).slice(0,4).map(o=>`${normalizeObjectLabel(o.class)} ${Math.round((o.score||0)*100)}%`);
+    appendDebugLog('tensor_self_test_result',{ok:true,elapsedMs:elapsed,objectCount:(objects||[]).length,top});
+    if(top.length)setMirrorMsg(`Tensor OK in ${elapsed}ms: ${top.join(', ')}`,'ok');
+    else setMirrorMsg(`Tensor loaded in ${elapsed}ms, but no objects were detected in this frame.`,`warn`);
+  }catch(e){
+    const msg=String(e?.message||'Tensor self-test failed');
+    LOCAL_ANALYZER.tfLastError=msg;
+    appendDebugLog('tensor_self_test_result',{ok:false,error:msg});
+    setMirrorMsg(`Tensor self-test failed: ${msg}`,'err');
+  }
+}
 function buildTrend(){
   const l=(db.entries||[]).slice(-7);
   if(!l.length)return '';
@@ -536,17 +626,19 @@ function buildVisualAnchors(objects,sceneSummary){
   const strong=(objects||[]).filter(o=>Number(o.score)>=0.23).slice(0,6);
   const normalized=[...new Set(strong.map(o=>normalizeObjectLabel(o.class)).filter(Boolean))];
   const scene=String(sceneSummary||'').toLowerCase();
-  if(scene.includes('around you:'))normalized.push('room');
+  if(scene.includes('words in frame'))normalized.push('text');
   if(scene.includes('words in frame'))normalized.push('words');
   const anchors=[...new Set(normalized)].filter(Boolean).slice(0,8);
-  return anchors.length?anchors:['room','scene'];
+  return anchors;
 }
 function buildRequiredAnchors(objects){
   const required=[...new Set((objects||[]).filter(o=>Number(o.score)>=0.3).slice(0,3).map(o=>normalizeObjectLabel(o.class)).filter(Boolean))];
   return required.slice(0,2);
 }
-function buildObjectFactsForPrompt(objects){
+function buildObjectFactsForPrompt(objects,errors=[]){
   const top=(objects||[]).filter(o=>Number(o.score)>=0.2).slice(0,5);
+  const tensorFailed=(errors||[]).some(e=>String(e||'').toLowerCase().includes('tensor/coco failed'));
+  if(!top.length&&tensorFailed)return 'Object detector unavailable in this scan (Tensor timeout).';
   if(!top.length)return 'No strong objects detected.';
   return top.map(o=>`${normalizeObjectLabel(o.class)} ${Math.round(Number(o.score||0)*100)}%`).join(', ');
 }
@@ -564,9 +656,22 @@ function textMentionsAnchors(text,anchors){
 }
 function buildAnchorPhrase(anchors){
   const list=(anchors||[]).filter(Boolean).slice(0,2);
-  if(!list.length)return 'the room around you';
+  if(!list.length)return '';
   if(list.length===1)return list[0];
   return `${list[0]} and ${list[1]}`;
+}
+function buildMoodAnchor(top){
+  const key=String(top||'neutral').toLowerCase();
+  const map={
+    happy:'the smile in your face',
+    sad:'the softness in your eyes',
+    angry:'the tension in your jawline',
+    neutral:'your steady gaze',
+    surprised:'your wide-eyed look',
+    fearful:'the caution in your expression',
+    disgusted:'the clear reaction in your face',
+  };
+  return map[key]||'your expression';
 }
 function hasTechnicalLeak(text){
   return /\b(tensor|mediapipe|face-api|pipeline|model|ocr|confidence|probability)\b/i.test(String(text||''));
@@ -617,7 +722,8 @@ function fallbackText(top,energy,prev,voice,sceneSummary,actionCue,visualAnchors
   };
   const scene=buildSceneHint(sceneSummary);
   const action=String(actionCue||'').trim();
-  const anchorLine=`Photo cue: ${buildAnchorPhrase(visualAnchors)}.`;
+  const anchorPhrase=buildAnchorPhrase(visualAnchors)||buildMoodAnchor(top);
+  const anchorLine=anchorPhrase?`Photo cue: ${anchorPhrase}.`:'';
   return `${pickFreshCandidate(openers[top]||openers.neutral)} ${action} ${anchorLine} ${shift} ${scene} ${vibeTail[voice]||vibeTail.direct}`.replace(/\s+/g,' ').trim();
 }
 function voiceScore(voice,context={}){
@@ -674,9 +780,9 @@ function buildPrompt(input){
   const moodPct=Math.round(Number(input.expressions?.[input.topExpression]||0)*100);
   const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid selfie check-in moment.';
   const anchors=(input.visualAnchors||[]).filter(Boolean).slice(0,8);
-  const anchorsLine=`Visual anchors from the photo: ${anchors.join(', ')}.`;
+  const anchorsLine=anchors.length?`Visual anchors from the photo: ${anchors.join(', ')}.`:'Visual anchors from the photo: none reliable in this scan.';
   const required=(input.requiredAnchors||[]).filter(Boolean).slice(0,3);
-  const requiredLine=required.length?`Required anchors (must include at least one): ${required.join(', ')}.`:'Required anchors: use any visual anchor naturally.';
+  const requiredLine=required.length?`Required anchors (must include at least one): ${required.join(', ')}.`:'Required anchors: none.';
   const objectsLine=`Detected objects: ${input.objectFacts||'No strong objects detected.'}`;
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
@@ -697,7 +803,7 @@ Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 Write exactly 2-4 sentences in selfie-caption style.
 Sentence 1: mood hook. Sentence 2: what the person is doing right now. Final sentence: motivating line that feels confident and warm.
 You MUST mention at least one required anchor if provided.
-If no required anchor is provided, mention at least one visual anchor from the list.
+If there are no required or visual anchors, ground the caption in expression/body cues from this specific frame and do not invent objects.
 Optional: at most one short hashtag at the very end.
 No therapy script. No mention of model names, percentages, or technical pipelines.`;
 }
@@ -737,8 +843,10 @@ async function callGemini(input){
     }
     appendDebugLog('comment_selected',{channel:'face',voice:input.voice,text,mood:input.topExpression,energy:input.energy,anchors,grounded:isCaptionGrounded(text,input)});
     return text;
-  }catch{
-    setMirrorMsg('Writing service was slow, so this entry used local style fallback.','info');
+  }catch(err){
+    const msg=String(err?.message||'');
+    const quotaIssue=/quota|429|rate[- ]?limit|billing/i.test(msg);
+    setMirrorMsg(quotaIssue?'Gemini quota/rate limit reached. Using local fallback text.':'Writing service was slow, so this entry used local style fallback.','info');
     const fallback=fallbackText(input.topExpression,input.energy,input.prev,input.voice,input.sceneSummary,input.actionCue,input.visualAnchors);
     appendDebugLog('comment_fallback',{channel:'face',voice:input.voice,text:fallback,mood:input.topExpression,energy:input.energy,anchors:input.visualAnchors||[]});
     return fallback;
@@ -755,9 +863,9 @@ function buildNoFacePrompt(input){
   const angle=pickRandom(['Write this like a strong Instagram selfie caption, but grounded and personal.','Build meaning from objects and atmosphere, not face data.','Use one grounded detail and one emotional inference.']);
   const actionLine=input.actionCue?`Current action/moment cue: ${input.actionCue}`:'Current action/moment cue: candid scene-based check-in.';
   const anchors=(input.visualAnchors||[]).filter(Boolean).slice(0,8);
-  const anchorsLine=`Visual anchors from the photo: ${anchors.join(', ')}.`;
+  const anchorsLine=anchors.length?`Visual anchors from the photo: ${anchors.join(', ')}.`:'Visual anchors from the photo: none reliable in this scan.';
   const required=(input.requiredAnchors||[]).filter(Boolean).slice(0,3);
-  const requiredLine=required.length?`Required anchors (must include at least one): ${required.join(', ')}.`:'Required anchors: use any visual anchor naturally.';
+  const requiredLine=required.length?`Required anchors (must include at least one): ${required.join(', ')}.`:'Required anchors: none.';
   const objectsLine=`Detected objects: ${input.objectFacts||'No strong objects detected.'}`;
   return `You are a private mirror diary voice. Sound human, natural, and specific.
 
@@ -778,7 +886,7 @@ Avoid repeating recent openers: ${blocked.join(' | ')||'none'}.
 Write exactly 2-4 sentences in selfie-caption style.
 Sentence 1: mood hook from scene. Sentence 2: what the person seems to be doing right now. Final sentence: motivating line that feels confident and warm.
 You MUST mention at least one required anchor if provided.
-If no required anchor is provided, mention at least one visual anchor from the list.
+If there are no required or visual anchors, ground the caption in expression/body cues from this specific frame and do not invent objects.
 Optional: at most one short hashtag at the very end.
 No therapy script. No mention of model names or technical pipelines.`;
 }
@@ -789,7 +897,8 @@ function fallbackNoFaceResume(input){
     'Even without a face lock, this capture carries mood.'
   ]);
   const action=String(input.actionCue||'').trim();
-  const anchorLine=`Photo cue: ${buildAnchorPhrase(input.visualAnchors)}.`;
+  const anchorPhrase=buildAnchorPhrase(input.visualAnchors);
+  const anchorLine=anchorPhrase?`Photo cue: ${anchorPhrase}.`:'';
   const scene=buildSceneHint(input.visualSummary);
   const bridge=input.prev?pickFreshCandidate([`It still feels connected to your last entry (${input.prev.expression}).`,`It follows the emotional thread of your previous note (${input.prev.expression}).`]):pickFreshCandidate(['This is a clean start, and atmosphere leads the first line.','First note in this run, so the room sets the tone.']);
   const tail={poetic:'Caption this: you are still becoming, even in quiet frames.',dramatic:'Episode note: this is tension, not the ending.',humorous:'This post says: chaotic maybe, iconic definitely.',cinematic:'Freeze-frame it, then step into the next scene.'};
@@ -810,8 +919,10 @@ async function callGeminiNoFace(input){
     }
     appendDebugLog('comment_selected',{channel:'no_face',voice:input.voice,text,anchors,grounded:isCaptionGrounded(text,input)});
     return text;
-  }catch{
-    setMirrorMsg('Writing service was slow, so this entry used local scene fallback.','info');
+  }catch(err){
+    const msg=String(err?.message||'');
+    const quotaIssue=/quota|429|rate[- ]?limit|billing/i.test(msg);
+    setMirrorMsg(quotaIssue?'Gemini quota/rate limit reached. Using local fallback text.':'Writing service was slow, so this entry used local scene fallback.','info');
     const fallback=fallbackNoFaceResume(input);
     appendDebugLog('comment_fallback',{channel:'no_face',voice:input.voice,text:fallback,anchors:input.visualAnchors||[]});
     return fallback;
@@ -890,9 +1001,13 @@ async function doScan(){
     const prev=db.entries?.slice(-1)[0]||null;
     appendDebugLog('scan_start',{capturedAt:nowIso,dayN,scanInDay,cameraFacing:db.cameraFacing||'user',photoMode:db.photoMode||'ask'});
     byId('cam-overlay-text').textContent='analyzing moment...';
+    const coldTensor=!LOCAL_ANALYZER.tfReady;
+    if(coldTensor)setMirrorMsg('Loading object detector (first run can take ~20s).','info');
+    const pipelineStepTimeout=coldTensor?12000:7000;
+    const pipelineHardTimeout=coldTensor?32000:18000;
     const local=await withTimeout(
-      runSmartLocalPipeline(detectTarget,{source:'capture',enableOcr:false,stepTimeoutMs:7000}),
-      15000,
+      runSmartLocalPipeline(detectTarget,{source:'capture',enableOcr:false,stepTimeoutMs:pipelineStepTimeout,tensorLoadTimeoutMs:coldTensor?26000:12000,tensorDetectTimeoutMs:coldTensor?10000:6500}),
+      pipelineHardTimeout,
       'Capture analysis',
     ).catch((err)=>({
       analyzedAt:new Date().toISOString(),
@@ -905,14 +1020,18 @@ async function doScan(){
       summary:'A quick scene fallback was used for this capture.',
     }));
     LOCAL_ANALYZER.lastResult={...local,imageDataUrl:capturedFrame||null};
-    if(local.errors.length){setMirrorMsg('Capture completed with a light fallback path.','info');}
-    appendDebugLog('local_pipeline',{routed:local.routed||[],summary:local.summary||'',errors:local.errors||[],objects:(local.objects||[]).slice(0,6),faceapi:local.faceapi||null,mediapipe:local.mediapipe||null,ocr:local.ocr||null});
+    if(local.errors.length){
+      const tensorTimeout=local.errors.some(e=>String(e).toLowerCase().includes('tensor/coco failed')&&String(e).toLowerCase().includes('timed out'));
+      if(tensorTimeout)setMirrorMsg('Object detector was still warming up, so this scan used fallback analysis. Try one more capture.','warn');
+      else setMirrorMsg('Capture completed with a light fallback path.','info');
+    }
+    appendDebugLog('local_pipeline',{routed:local.routed||[],summary:local.summary||'',errors:local.errors||[],tfReady:Boolean(LOCAL_ANALYZER.tfReady),tfLastError:LOCAL_ANALYZER.tfLastError||null,objects:(local.objects||[]).slice(0,6),faceapi:local.faceapi||null,mediapipe:local.mediapipe||null,ocr:local.ocr||null});
 
     const face=local.faceapi||null;
     const actionCue=inferActionCue(local.objects||[],local.summary);
     const visualAnchors=buildVisualAnchors(local.objects||[],local.summary);
     const requiredAnchors=buildRequiredAnchors(local.objects||[]);
-    const objectFacts=buildObjectFactsForPrompt(local.objects||[]);
+    const objectFacts=buildObjectFactsForPrompt(local.objects||[],local.errors||[]);
     byId('cam-overlay-text').textContent='writing your entry...';
     if(face){
       const top=face.topExpression||'neutral';
@@ -972,10 +1091,11 @@ function clearDebugLogs(){if(!confirm('Clear all debug logs?'))return;db.debugLo
 function exportDiary(){const payload={exportedAt:new Date().toISOString(),profile:{name:db.name,age:db.age},entries:db.entries||[]};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`mirror-diary-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
 function triggerImport(){byId('import-file').click();}
 async function importDiary(event){const file=event.target.files&&event.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());const list=Array.isArray(parsed.entries)?parsed.entries:[];const valid=list.filter(e=>e&&e.date&&e.reading&&e.expression).map(e=>({...e,feedback:e.feedback==='like'||e.feedback==='dislike'?e.feedback:null,voice:e.voice&&VOICES.includes(e.voice)?e.voice:pickAdaptiveVoice(),photoDataUrl:typeof e.photoDataUrl==='string'?e.photoDataUrl:null,linkedPhotos:Array.isArray(e.linkedPhotos)?e.linkedPhotos.filter(p=>typeof p==='string').slice(0,3):[],resumeMode:Boolean(e.resumeMode)}));if(!valid.length){alert('No valid entries found in file.');return;}db.entries=[...(db.entries||[]),...valid].sort((a,b)=>new Date(a.date)-new Date(b.date));refreshProfileMemory();saveDB();buildDiary();setMirrorMsg('Import completed.','ok');}catch{alert('Import failed. Use a valid JSON export file.');}finally{byId('import-file').value='';}}
-function openSettings(){byId('set-name').value=db.name||'';byId('set-age').value=db.age||'';byId('set-pin').value=db.pin||'';byId('set-key').value='';byId('set-photo-mode').value=['ask','always','never'].includes(db.photoMode)?db.photoMode:'ask';byId('set-debug-mode').value=db.debugMode?'on':'off';byId('set-theme').value=db.theme||'warm';showScreen('s-settings');}
-async function saveSettings(){const name=byId('set-name').value.trim(),age=Number(byId('set-age').value),pin=byId('set-pin').value.trim(),typedKey=byId('set-key').value.trim(),photoMode=byId('set-photo-mode').value,debugMode=byId('set-debug-mode').value,theme=byId('set-theme').value;if(!name||!age||age<5||age>120){alert('Please provide a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}if(typedKey&&typedKey.length<20){alert('That key looks too short.');return;}db.name=name;db.age=age;db.pin=pin||'';db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=['warm','ocean','forest','night'].includes(theme)?theme:'warm';db.photoMode=['ask','always','never'].includes(photoMode)?photoMode:'ask';db.debugMode=debugMode==='on';db.debugLogs=Array.isArray(db.debugLogs)?db.debugLogs:[];db.cameraFacing=db.cameraFacing||'user';const resolved=typedKey||getApiKey();if(!resolved&&!appConfig.serverKeyConfigured){alert('No API key set. Add one, or configure GEMINI_API_KEY on server.');return;}setApiKey(resolved);saveDB();applyTheme(db.theme);setMirrorMsg(db.debugMode?'Debug mode is ON: model logs will be stored locally.':'','info');initMirror();}
+function updateThemeColorField(){const row=byId('custom-color-row');if(!row)return;const selected=byId('set-theme')?.value||'warm';row.style.display=selected==='custom'?'block':'none';}
+function openSettings(){byId('set-name').value=db.name||'';byId('set-age').value=db.age||'';byId('set-pin').value=db.pin||'';byId('set-key').value='';byId('set-photo-mode').value=['ask','always','never'].includes(db.photoMode)?db.photoMode:'ask';byId('set-debug-mode').value=db.debugMode?'on':'off';byId('set-theme').value=db.theme||'warm';byId('set-custom-color').value=/^#[0-9a-f]{6}$/i.test(String(db.customColor||''))?String(db.customColor).toLowerCase():'#099cff';updateThemeColorField();showScreen('s-settings');}
+async function saveSettings(){const name=byId('set-name').value.trim(),age=Number(byId('set-age').value),pin=byId('set-pin').value.trim(),typedKey=byId('set-key').value.trim(),photoMode=byId('set-photo-mode').value,debugMode=byId('set-debug-mode').value,theme=byId('set-theme').value,customColor=String(byId('set-custom-color').value||'').toLowerCase();if(!name||!age||age<5||age>120){alert('Please provide a valid name and age.');return;}if(pin&&!/^\d{4,10}$/.test(pin)){alert('PIN must be 4 to 10 digits.');return;}if(typedKey&&typedKey.length<20){alert('That key looks too short.');return;}if(theme==='custom'&&!/^#[0-9a-f]{6}$/i.test(customColor)){alert('Please choose a valid custom color.');return;}db.name=name;db.age=age;db.pin=pin||'';db.geminiModel=db.geminiModel||appConfig.defaultModel;db.keyMode='session';db.theme=['warm','ocean','forest','night','azure','custom'].includes(theme)?theme:'warm';db.customColor=/^#[0-9a-f]{6}$/i.test(customColor)?customColor:(db.customColor||'#099cff');db.photoMode=['ask','always','never'].includes(photoMode)?photoMode:'ask';db.debugMode=debugMode==='on';db.debugLogs=Array.isArray(db.debugLogs)?db.debugLogs:[];db.cameraFacing=db.cameraFacing||'user';const resolved=typedKey||getApiKey();if(!resolved&&!appConfig.serverKeyConfigured){alert('No API key set. Add one, or configure GEMINI_API_KEY on server.');return;}setApiKey(resolved);saveDB();applyTheme(db.theme);setMirrorMsg(db.debugMode?'Debug mode is ON: model logs will be stored locally.':'','info');initMirror();}
 function lockNow(){if(!db.pin){alert('Set a PIN first in settings.');return;}setUnlocked(false);showScreen('s-lock');}
-function clearAll(){if(!confirm('Delete all local profile data and diary entries? This cannot be undone.'))return;if(activeStream){activeStream.getTracks().forEach(t=>t.stop());activeStream=null;}localStorage.removeItem(DB_KEY);sessionStorage.removeItem(SESSION_API_KEY);sessionStorage.removeItem(SESSION_UNLOCK);db={theme:'warm',photoMode:'ask',cameraFacing:'user',profileMemory:null,debugMode:false,debugLogs:[]};lastEntryIndex=-1;lastFaceReadings=null;LOCAL_ANALYZER.lastResult=null;closeFaceReadings();closePhotoSavePrompt();closeDebugLogs();applyTheme('warm');showScreen('s-setup');}
+function clearAll(){if(!confirm('Delete all local profile data and diary entries? This cannot be undone.'))return;if(activeStream){activeStream.getTracks().forEach(t=>t.stop());activeStream=null;}localStorage.removeItem(DB_KEY);sessionStorage.removeItem(SESSION_API_KEY);sessionStorage.removeItem(SESSION_UNLOCK);db={theme:'warm',customColor:'#099cff',photoMode:'ask',cameraFacing:'user',profileMemory:null,debugMode:false,debugLogs:[]};lastEntryIndex=-1;lastFaceReadings=null;LOCAL_ANALYZER.lastResult=null;closeFaceReadings();closePhotoSavePrompt();closeDebugLogs();applyTheme('warm');showScreen('s-setup');}
 window.addEventListener('load',async()=>{await loadServerConfig();db=normalizeDB(loadDB());refreshProfileMemory();applyTheme(db.theme||'warm');lastFaceReadings=(db.entries&&db.entries.length)?(db.entries[db.entries.length-1].faceReadings||null):null;byId('inp-name').value=db.name||'';byId('inp-age').value=db.age||'';byId('inp-pin').value=db.pin||'';updateKeyNotice();routeFromState();});
 </script>
 </body>
